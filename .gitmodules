@@ -1,3 +1,9 @@
 [submodule "tools/esptool"]
 	path = tools/esptool
 	url = https://github.com/themadinventor/esptool.git
+[submodule "tools/anybaud"]
+	path = tools/anybaud
+	url = https://gist.github.com/3f1a984533556cf890d9.git
+[submodule "tools/esp_binaries"]
+	path = tools/esp_binaries
+	url = https://github.com/espressif/ESP8266_AT.git
