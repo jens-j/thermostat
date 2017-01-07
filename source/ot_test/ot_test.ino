@@ -22,7 +22,7 @@ volatile int recvCountBuffer;
 volatile bool recvBusy = false; // indicate a receive is in progress
 volatile uint32_t long recvData; // buffer to hold the received bits
 volatile uint32_t long recvDataBuffer;
-volatile bool recvErrorFlag; // receive error flag
+volatile bool recvErrorFlag = false; // receive error flag
 volatile uint32_t recvTimeRef; // timestamp of last clock transition
 volatile bool recvReady = false; // signal a message has been reveived
 volatile bool recvError = false; // signal a receive error occured
@@ -35,13 +35,15 @@ volatile bool midBitFlag; // flag mid cycle transition has occurred this cycle
 ISR(WDT_vect){
     
     // Disable wdt interrupt
-    WDTCSR &= ~(1<<WDIE); 
+    WDTCSR &= ~(1<<WDIE);
 
     // Buffer data
     recvCountBuffer = recvCount;
     recvDataBuffer = recvData;
 
     errorCodeBuffer = (errorCode == NONE) ? TIMEOUT : errorCode;
+
+    Serial.println(3);
 
     recvBusy = false; // reset receive state
     recvErrorFlag = false; // reset error flag
@@ -53,78 +55,90 @@ ISR(WDT_vect){
 // Each frame consists of a 32 bit message together with positive start and stop bits
 void recvIsr() {
 
-    char printBuffer[80];
-    sprintf(printBuffer, "inpin = %d", digitalRead(inPin));
-    Serial.println(printBuffer);
+    // char printBuffer[80];
+    // sprintf(printBuffer, "inpin = %d", digitalRead(inPin));
+    // Serial.println(printBuffer);
 
-    // uint32_t t = micros();
-    // wdt_reset();
+    uint32_t t = micros();
+    wdt_reset();
 
-    // // If an error happened, discard all data and wait for a timeout
-    // if (recvErrorFlag == true) {
-    //     recvCount++;
-    //     return;
-    // }
+    // If an error happened, discard all data and wait for a timeout
+    if (recvErrorFlag == true) {
+        Serial.println(2);
+        recvCount++;
+        return;
+    }
 
-    // // Discard the first transition of the start bit and initialize variables
-    // if (recvBusy == false) {
-    //     recvBusy = true;
-    //     recvCount = 0;
-    //     recvData = 0x00000001;
-    //     midBitFlag = false;
-    //     errorCode = NONE;
-    //     WDTCSR |= (1<<WDIE); // Enable wdt interrupt
+    // Discard the first transition of the start bit and initialize variables
+    if (recvBusy == false) {
+        // the first edge should always be positive
+        if (digitalRead(inPin) == LOW) {
+            Serial.println(0);
+            return;
+        }
+        Serial.println(1);
+        recvBusy = true;
+        recvCount = 0;
+        recvData = 0x00000001;
+        midBitFlag = false;
+        errorCode = NONE;
+        WDTCSR |= (1<<WDIE); // Enable wdt interrupt
+    } 
+    // First clock transition of the start bit
+    else if (recvCount == 0) {
 
-    //     // the first edge should always be positive
-    //     if (digitalRead(inPin) == LOW) {
-    //         recvErrorFlag = true;
-    //         errorCode = WRONG_FIRST_EDGE;
-    //     }
-    // } 
-    // // First clock transition of the start bit
-    // else if (recvCount == 0) {
-
-    //     // this is the messages first bit transition
-    //     recvTimeRef = t;
+        // this is the messages first bit transition
+        recvTimeRef = t;
         
-    //     // // the second edge should always be negative
-    //     // if (digitalRead(inPin) == HIGH) {
-    //     //     recvErrorFlag = true;
-    //     //     errorCode = WRONG_SECOND_EDGE;
-    //     // }
+        // // the second edge should always be negative
+        // if (digitalRead(inPin) == HIGH) {
+        //     recvErrorFlag = true;
+        //     errorCode = WRONG_SECOND_EDGE;
+        // }
 
-    //     recvCount++;
-    //     recvData = (recvData << 1) | ~digitalRead(inPin);
+        recvCount++;
+        if (digitalRead(inPin)) {
+            recvData = recvData << 1;
+        } else {
+            recvData = (recvData << 1) | 1UL;
+        }
+        
 
-    // } 
-    // // All other transitions
-    // else {
-    //     // check for half cycle transitions 
-    //     if (t - recvTimeRef < 900) {
-    //         if (midBitFlag == false) {
-    //             midBitFlag = true;
-    //             return;
-    //         } else {
-    //             recvErrorFlag = false;
-    //             errorCode = EDGE_EARLY;
-    //         }
-    //     } 
-    //     // valid bit transition
-    //     else if (t - recvTimeRef < 1150) {
-    //         recvData = (recvData << 1) | ~digitalRead(inPin);
-    //         if (++recvCount == 34) {
-    //             WDTCSR &= ~(1<<WDIE); // Disable wdt interrupt
-    //             recvReady = true;
-    //         }
-    //         recvTimeRef = t;
-    //         midBitFlag = false;
-    //     }
-    //     // edge arrived too late
-    //     else {
-    //         recvErrorFlag = true;
-    //         errorCode = EDGE_LATE;
-    //     }
-    // }
+    } 
+    // All other transitions
+    else {
+        // check for half cycle transitions 
+        if (t - recvTimeRef < 900) {
+            if (midBitFlag == false) {
+                midBitFlag = true;
+                return;
+            } else {
+                recvErrorFlag = false;
+                errorCode = EDGE_EARLY;
+            }
+        } 
+        // valid bit transition
+        else if (t - recvTimeRef < 1150) {
+
+            if (digitalRead(inPin)) {
+                recvData = recvData << 1;
+            } else {
+                recvData = (recvData << 1) | 1UL;
+            }
+
+            if (++recvCount == 34) {
+                //WDTCSR &= ~(1<<WDIE); // Disable wdt interrupt
+                recvReady = true;
+            }
+            recvTimeRef = t;
+            midBitFlag = false;
+        }
+        // edge arrived too late
+        else {
+            recvErrorFlag = true;
+            errorCode = EDGE_LATE;
+        }
+    }
 }
 
 
@@ -140,7 +154,6 @@ uint32_t parity32(uint32_t x) {
         }
         x = x >> 1;
     }
-    Serial.println(parity);
     return parity;
 }
 
@@ -186,6 +199,7 @@ void sendFrame(uint32_t msgType, uint32_t dataId, uint32_t dataValue) {
     // Send stop bit
     sendMachesterBit(true);
 
+    delay(1);
     attachInterrupt(interruptNr, recvIsr, CHANGE);
 
 }
@@ -226,28 +240,28 @@ void loop() {
     // // ask boiler water temperature
     sendFrame(0UL, 25UL, 0UL);
 
-    // Listen for a reply for 1s
+    // Listen for a reply for 2s
     tRef = millis();
     while(millis() - tRef < 2000) {
 
-        // if (recvError) {
-        //     Serial.println("\nerror:"); 
-        //     sprintf(printBuffer, "count = %d", recvCountBuffer);
-        //     Serial.println(printBuffer);
-        //     sprintf(printBuffer, "data = 0x%08x", recvDataBuffer);
-        //     Serial.println(printBuffer);
-        //     sprintf(printBuffer, "error code = %d", errorCodeBuffer);
-        //     Serial.println(printBuffer);
-        //     recvError = false;
-        // } 
+        if (recvError) {
+            Serial.println("\nerror:"); 
+            sprintf(printBuffer, "count = %d", recvCountBuffer);
+            Serial.println(printBuffer);
+            sprintf(printBuffer, "data = 0x%08lx", recvData);
+            Serial.println(printBuffer);
+            sprintf(printBuffer, "error code = %d", errorCodeBuffer);
+            Serial.println(printBuffer);
+            recvError = false;
+        } 
         
-        // if (recvReady) {
-        //     Serial.println("\nreceived message:"); 
-        //     sprintf(printBuffer, "data = 0x%08x", recvDataBuffer);
-        //     Serial.println(printBuffer);
-        //     sprintf(printBuffer, "count = %d", recvCountBuffer);
-        //     Serial.println(printBuffer); 
-        //     recvReady = false;
-        // }
+        if (recvReady) {
+            Serial.println("\nreceived message:"); 
+            sprintf(printBuffer, "data = 0x%08lx", recvData);
+            Serial.println(printBuffer);
+            sprintf(printBuffer, "count = %d", recvCountBuffer);
+            Serial.println(printBuffer); 
+            recvReady = false;
+        }
     }
 }
