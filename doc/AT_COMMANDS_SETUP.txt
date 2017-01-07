@@ -1,0 +1,29 @@
+[for firmware version 2.0.0]
+
+test connectivity with 
+> AT
+> AT+GMR
+
+set the esp to a low baud rate to allow communication using software serial on the arduino UNO
+> AT+UART_DEF=9600,8,1,0,0
+(try first with UART_CUR)
+
+connect to local network
+> AT+CWMODE=3
+> AT+CWLAP
+> AT+CWJAP="<access_point_name>","<password>"
+
+print IP
+> AT+CIFSR
+
+send to server
+> AT+CIPMUX=0
+> AT+CIPSTART="TCP","<server>",<port>
+> AT+CIPSEND=<length>
+> <message>
+if the server returns something:
++IPD,<length>:<message>
+> AT+CIPCLOSE
+
+Get connection status
+> AT+CIPSTATUS

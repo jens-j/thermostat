@@ -11,13 +11,19 @@ serverSocket.bind(('', port))
 print('bound to %s:%d' % (socket.gethostname(), port))
 serverSocket.listen(5)
 
-while True:
-	clientSocket, address = serverSocket.accept() 
-	print("Got a connection from %s" % str(address))
-	recvBuffer = clientSocket.recv(4096)
+try:
+	while True:
+		clientSocket, address = serverSocket.accept() 
+		print("Got a connection from %s" % str(address))
+		recvBuffer = clientSocket.recv(4096)
 
-	if recvBuffer == b'':
-		print('error')
-	else:	
-		print('received: %s' % recvBuffer)
-		clientSocket.send(b'b')
+		if recvBuffer == b'':
+			print('error')
+		else:	
+			print('received: %s' % recvBuffer)
+			clientSocket.send(b'b')
+
+		clientSocket.close()
+except:
+	serverSocket.close()
+	exit()

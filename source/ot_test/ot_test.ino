@@ -20,8 +20,8 @@ enum ErrorCode {NONE, WRONG_FIRST_EDGE, WRONG_SECOND_EDGE, EDGE_EARLY, EDGE_LATE
 volatile int recvCount = 0; // the number of received bits
 volatile int recvCountBuffer;
 volatile bool recvBusy = false; // indicate a receive is in progress
-volatile uint32_t long recvData; // buffer to hold the received bits
-volatile uint32_t long recvDataBuffer;
+volatile uint64_t recvData; // buffer to hold the received bits
+volatile uint64_t recvDataBuffer;
 volatile bool recvErrorFlag = false; // receive error flag
 volatile uint32_t recvTimeRef; // timestamp of last clock transition
 volatile bool recvReady = false; // signal a message has been reveived
