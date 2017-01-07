@@ -1,3 +1,4 @@
+#include "Arduino.h"
 #include <stdint.h>
 
 
@@ -27,6 +28,15 @@ enum ErrorCode {ERR_NONE,
 enum MsgType   {READ_DATA,
                 WRITE_DATA};
 
+const String MSG_TYPE[8] = {"READ_DATA",
+                            "WRITE_DATA",
+                            "INVALID_DATA",
+                            "RESERVED",
+                            "READ_ACK",
+                            "WRITE_ACK",
+                            "DATA_INVALID",
+                            "UNKNOWN_DATA_ID"};
+
 
 
 class OpenTherm {
@@ -49,7 +59,9 @@ public:
     void wdtIsr();
 
     // parse changes on the opentherm input
-    void recvIsr(int);
+    void recvIsr();
+
+    static void printMsg(uint64_t);
 
 private:
 

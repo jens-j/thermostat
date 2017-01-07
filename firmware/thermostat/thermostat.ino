@@ -20,13 +20,8 @@ ISR(WDT_vect) {
     ot.wdtIsr();
 }
 
-void extIntDispatch() {
-
-    digitalWrite(testPin, HIGH);
-    digitalRead(inPin);
-    digitalWrite(testPin, LOW);
-    
-    ot.recvIsr(digitalRead(inPin));
+void extIntDispatch() {   
+    ot.recvIsr();
 }
 
 
@@ -38,6 +33,8 @@ void setup() {
 
     // set up external interrupt
     attachInterrupt(interruptNr, extIntDispatch, CHANGE);
+
+    delay(2000);
 }
 
 
@@ -50,7 +47,7 @@ void loop() {
 
     t = millis();
 
-    while (millis() - t < 2000) {
+    while (millis() - t < 4000) {
 
         // print errors
         if (ot.recvErrorCode != ERR_NONE) {
@@ -64,9 +61,8 @@ void loop() {
         // print messages
         if (ot.recvFlag == true) {
             ot.recvFlag = false;
-            sprintf(cBuffer, "recv: 0x%08lx%08lx (%d)", 
-                (uint32_t) (ot.recvData >> 32), (uint32_t) ot.recvData, ot.recvCount);
-            Serial.println(cBuffer);
+            Serial.println("\nreceived:");
+            OpenTherm::printMsg(ot.recvData);
         } 
     }
 }

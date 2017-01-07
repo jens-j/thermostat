@@ -4,10 +4,10 @@
 #include "opentherm.h"
 
 
-OpenTherm::OpenTherm(int inputPin, int outPin, int interruptNr) {
+OpenTherm::OpenTherm(int inPin, int outPin, int interruptNr) {
 
     // store configuration
-    inputPin = inputPin;
+    inputPin = inPin;
     outputPin = outPin;
     interruptNumber = interruptNr;
 
@@ -42,7 +42,7 @@ void OpenTherm::sendFrame(uint32_t msgType, uint32_t dataId, uint32_t dataValue)
     msg |= (uint32_t) msgType << 28;
     msg |= parity32(msg) << 31;
 
-    sprintf(printBuffer, "send: 0x%08lx", msg);
+    sprintf(printBuffer, "\nsend: 0x%08lx", msg);
     Serial.println(printBuffer);
 
     //detachInterrupt(interruptNumberr);
@@ -67,6 +67,27 @@ void OpenTherm::sendFrame(uint32_t msgType, uint32_t dataId, uint32_t dataValue)
 }
 
 
+// pretty print an opentherm frame
+void OpenTherm::printMsg(uint64_t msg) {
+
+    int msgType = (msg >> 29) & 0x7;
+    int dataId = (msg >> 17) & 0xff;
+    int dataValue = msg >> 1;
+
+    if (!(msg & 0x100000000ULL))
+        Serial.println("missing start bit!");
+    if (!(msg & 1)) 
+        Serial.println("missing stop bit!");
+
+    Serial.print("msg type:   ");
+    Serial.println(MSG_TYPE[msgType]);
+    Serial.print("data id:    ");
+    Serial.println(dataId);
+    Serial.print("data value: ");
+    Serial.println(dataValue);
+}
+
+
 void OpenTherm::wdtIsr() {
 
     // Disable wdt interrupt
@@ -80,17 +101,18 @@ void OpenTherm::wdtIsr() {
 
 // Parse manchester encoded frames from the opentherm interface.
 // Each frame consists of a 32 bit message together with positive start and stop bits
-void OpenTherm::recvIsr(int inputState) {
+void OpenTherm::recvIsr() {
 
 
     uint32_t t = micros();
+    int inputState = digitalRead(inputPin);
     wdt_reset();
+
 
     //Serial.println(digitalRead(inputPin));
 
     // If an error happened, discard all data and wait for a timeout
     if (recvErrorFlag == true) {
-        //Serial.println(2);
         recvCount++;
         return;
     }
@@ -98,8 +120,7 @@ void OpenTherm::recvIsr(int inputState) {
     // Discard the first transition of the start bit and initialize variables
     if (recvBusyFlag == false) {
         // the first edge should always be positive
-        if (digitalRead(inputPin) == LOW) {
-            //Serial.println(0);
+        if (!inputState) {
             return;
         }
         //Serial.println(1);
@@ -136,10 +157,6 @@ void OpenTherm::recvIsr(int inputState) {
         } 
         // valid bit transition
         else if (t - recvTimeRef < 1150) {
-
-            digitalWrite(testPin, HIGH);
-            digitalRead(inPin);
-            digitalWrite(testPin, LOW);
 
             if (inputState) {
                 recvBuffer = recvBuffer << 1;
