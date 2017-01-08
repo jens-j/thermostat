@@ -3,17 +3,17 @@
 
 
 #define ID_STATUS               0
-#define ID_SETPOINT             1 // write-only
+#define ID_SETPOINT             1   // write-only
 #define ID_SLAVE_CONFIG         3
 #define ID_FAULT                5 
 #define ID_MODULATION_LEVEL     17
-#define ID_WATER_PRESSURE       18 // not supported
+#define ID_WATER_PRESSURE       18  // not supported
 #define ID_DHW_FLOW_RATE        19 
 #define ID_BOILER_WATER_TEMP    25
 #define ID_DHW_TEMP             26
-#define ID_RETURN_WATER_TEMP    28
+#define ID_RETURN_WATER_TEMP    28  // not supported
 #define ID_OT_VERSION_SLAVE     125 // not supported
-#define ID_SLAVE_VERSION        127
+#define ID_SLAVE_VERSION        127 // not supported
 
 
 // receive error code

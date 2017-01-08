@@ -208,10 +208,14 @@ void OpenTherm::recvIsr() {
 
 // Send a single machester encoded bit.
 void OpenTherm::sendMachesterBit(int val) {;
+    unsigned long t;
+
     digitalWrite(outputPin, val);
-    delayMicroseconds(500);
+    t = microseconds();
+    while (microseconds() - t < 500) {}
     digitalWrite(outputPin, not val);
-    delayMicroseconds(500);
+    t = microseconds();
+    while (microseconds() - t < 500) {}
 }
 
 
