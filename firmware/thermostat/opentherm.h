@@ -3,24 +3,22 @@
 
 
 #define ID_STATUS               0
-#define ID_SETPOINT             1
-#define ID_FAULT                5 
+#define ID_SETPOINT             1 // write-only
 #define ID_SLAVE_CONFIG         3
-#define ID_OT_VERSION_SLAVE     125
-#define ID_SLAVE_VERSION        127
+#define ID_FAULT                5 
 #define ID_MODULATION_LEVEL     17
-#define ID_WATER_PRESSURE       18
-#define ID_DHW_FLOW_RATE        19
-#define ID_ROOM_TEMP            24
+#define ID_WATER_PRESSURE       18 // not supported
+#define ID_DHW_FLOW_RATE        19 
 #define ID_BOILER_WATER_TEMP    25
 #define ID_DHW_TEMP             26
 #define ID_RETURN_WATER_TEMP    28
+#define ID_OT_VERSION_SLAVE     125 // not supported
+#define ID_SLAVE_VERSION        127
 
 
 // receive error code
 enum ErrorCode {ERR_NONE, 
-                ERR_FIRST_EDGE, 
-                ERR_SECOND_EDGE, 
+                ERR_FIRST_EDGE,  
                 ERR_EDGE_EARLY, 
                 ERR_EDGE_LATE, 
                 ERR_TIMEOUT};
@@ -61,7 +59,11 @@ public:
     // parse changes on the opentherm input
     void recvIsr();
 
+    // pretty print a message
     static void printMsg(uint64_t);
+
+    // calculate the positive parity bit value for a 32 bit word
+    static uint32_t parity32(uint32_t);
 
 private:
 
@@ -77,8 +79,5 @@ private:
 
     // send a single machester encoded bit over the opentherm interface
     void sendMachesterBit(int);
-
-    // calculate the positive parity bit value for a 32 bit word
-    uint32_t parity32(uint32_t);
     
 };

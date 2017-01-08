@@ -70,14 +70,21 @@ void OpenTherm::sendFrame(uint32_t msgType, uint32_t dataId, uint32_t dataValue)
 // pretty print an opentherm frame
 void OpenTherm::printMsg(uint64_t msg) {
 
+    char cBuffer[80];
+
     int msgType = (msg >> 29) & 0x7;
     int dataId = (msg >> 17) & 0xff;
     int dataValue = msg >> 1;
 
-    if (!(msg & 0x100000000ULL))
+    sprintf(cBuffer, "raw msg: 0x%08lx%08lx", (uint32_t) (msg >> 32), (uint32_t) msg);
+    Serial.println(cBuffer);
+
+    if (!(msg & 0x200000000ULL))
         Serial.println("missing start bit!");
     if (!(msg & 1)) 
         Serial.println("missing stop bit!");
+    if (OpenTherm::parity32(msg) == 0)
+        Serial.println("Parity error!");
 
     Serial.print("msg type:   ");
     Serial.println(MSG_TYPE[msgType]);
@@ -85,6 +92,22 @@ void OpenTherm::printMsg(uint64_t msg) {
     Serial.println(dataId);
     Serial.print("data value: ");
     Serial.println(dataValue);
+}
+
+
+// Calculate the even parity bit for a 32 bit vector
+uint32_t OpenTherm::parity32(uint32_t x) {
+
+    int i;
+    uint32_t parity = 0UL;
+  
+    for (i = 0; i < 32; i++) {
+        if (x & 1UL == 1UL) {
+            parity = parity ^ 1UL;
+        }
+        x = x >> 1;
+    }
+   return parity;
 }
 
 
@@ -121,6 +144,7 @@ void OpenTherm::recvIsr() {
     if (recvBusyFlag == false) {
         // the first edge should always be positive
         if (!inputState) {
+            recvErrorCode = ERR_FIRST_EDGE;
             return;
         }
         //Serial.println(1);
@@ -128,7 +152,6 @@ void OpenTherm::recvIsr() {
         recvCount = 0;
         recvBuffer = 0x00000000;
         midBitFlag = false;
-        recvErrorCode = ERR_NONE;
         WDTCSR |= (1<<WDIE); // Enable wdt interrupt
     } 
     // First clock transition of the start bit
@@ -192,17 +215,3 @@ void OpenTherm::sendMachesterBit(int val) {;
 }
 
 
-// Calculate the even parity bit for a 32 bit vector
-uint32_t OpenTherm::parity32(uint32_t x) {
-
-    int i;
-    uint32_t parity = 0UL;
-  
-    for (i = 0; i < 32; i++) {
-        if (x & 1UL == 1UL) {
-            parity = parity ^ 1UL;
-        }
-        x = x >> 1;
-    }
-    return parity;
-}
