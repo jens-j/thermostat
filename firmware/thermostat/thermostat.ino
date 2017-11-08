@@ -3,14 +3,13 @@
 
 
 // IO pins
-#define outPin 2
-#define inPin 3
-#define interruptNr 1 // interrupt number for pin 3
+#define otOut 2
+#define otIn 3
+#define otInterruptNr 1 // interrupt number for otIn pin
 
 // variables
 char cBuffer[80];
-OpenTherm ot = OpenTherm(inPin, outPin, interruptNr);
-
+OpenTherm ot = OpenTherm(otIn, otOut, otInterruptNr);
 
 // opentherm message receive timeout
 ISR(WDT_vect) {
@@ -27,7 +26,7 @@ void setup() {
     Serial.begin(115200);
 
     // set up external interrupt
-    attachInterrupt(interruptNr, extIntDispatch, CHANGE);
+    attachInterrupt(ot.interruptNumber, extIntDispatch, CHANGE);
 
     delay(3000);
 }

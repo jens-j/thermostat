@@ -52,11 +52,7 @@ void OpenTherm::sendFrame(uint32_t msgType, uint32_t dataId, uint32_t dataValue)
 
     // Send message
     while (mask != 0UL) {
-        if (msg & mask) {
-            sendMachesterBit(1);
-        } else {
-            sendMachesterBit(0);
-        }
+        sendMachesterBit(msg & mask);
         mask = mask >> 1;
     }
 
@@ -126,11 +122,9 @@ void OpenTherm::wdtIsr() {
 // Each frame consists of a 32 bit message together with positive start and stop bits
 void OpenTherm::recvIsr() {
 
-
     uint32_t t = micros();
     int inputState = digitalRead(inputPin);
     wdt_reset();
-
 
     //Serial.println(digitalRead(inputPin));
 
@@ -211,11 +205,11 @@ void OpenTherm::sendMachesterBit(int val) {;
     unsigned long t;
 
     digitalWrite(outputPin, val);
-    t = microseconds();
-    while (microseconds() - t < 500) {}
+    t = micros();
+    while (micros() - t < 500) {}
     digitalWrite(outputPin, not val);
-    t = microseconds();
-    while (microseconds() - t < 500) {}
+    t = micros();
+    while (micros() - t < 500) {}
 }
 
 

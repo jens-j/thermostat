@@ -46,6 +46,7 @@ public:
     volatile ErrorCode recvErrorCode; // receive error buffer
     volatile int recvErrorFlag;   // flag is set when a receive error is encountered 
     volatile int recvCount;       // count received bits
+    int interruptNumber;
 
     // constructor
     OpenTherm(int, int, int);
@@ -70,7 +71,6 @@ private:
     // pin configuration
     int inputPin;
     int outputPin;
-    int interruptNumber;
 
     bool recvBusyFlag;   // flag is active during the parsing of a message
     uint64_t recvBuffer; // buffer for incoming data
