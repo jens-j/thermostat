@@ -3,7 +3,7 @@
 
 
 // IO pins
-#define otOut 2
+#define otOut 12
 #define otIn 3
 #define otInterruptNr 1 // interrupt number for otIn pin
 
@@ -28,7 +28,7 @@ void setup() {
     // set up external interrupt
     attachInterrupt(ot.interruptNumber, extIntDispatch, CHANGE);
 
-    delay(3000);
+    delay(1000);
 }
 
 

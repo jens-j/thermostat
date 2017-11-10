@@ -1,6 +1,6 @@
 #include <SoftwareSerial.h>
 
-SoftwareSerial esp(3, 2); // RX, TX
+SoftwareSerial esp(11, 2); // RX, TX
 
 void setup() {
   pinMode(2, OUTPUT);

@@ -78,6 +78,6 @@ private:
     unsigned long recvTimeRef; 
 
     // send a single machester encoded bit over the opentherm interface
-    void sendMachesterBit(int);
+    void sendMachesterBit(bool);
     
 };

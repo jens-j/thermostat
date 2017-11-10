@@ -22,6 +22,7 @@ OpenTherm::OpenTherm(int inPin, int outPin, int interruptNr) {
     // set IO direction
     pinMode(inputPin, INPUT);
     pinMode(outputPin, OUTPUT); 
+    digitalWrite(outputPin, HIGH);
 
     // set up WDT interrupt
     wdt_reset();
@@ -201,13 +202,13 @@ void OpenTherm::recvIsr() {
 
 
 // Send a single machester encoded bit.
-void OpenTherm::sendMachesterBit(int val) {;
+void OpenTherm::sendMachesterBit(bool val) {;
     unsigned long t;
 
-    digitalWrite(outputPin, val);
+    digitalWrite(outputPin, not val);
     t = micros();
     while (micros() - t < 500) {}
-    digitalWrite(outputPin, not val);
+    digitalWrite(outputPin, val);
     t = micros();
     while (micros() - t < 500) {}
 }
