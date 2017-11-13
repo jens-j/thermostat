@@ -9,14 +9,11 @@ void setup() {
   Serial.begin(9600);
   esp.begin(9600);
 
-  delay(1000);
-
-  // connect to the server
-  esp.write("AT+CIPSTART=\"TCP\",\"192.168.2.3\",8888\r\n");
+  esp.write("AT+CIPSTART=\"TCP\",\"192.168.2.3\",8888\r\n");  // connect to the server
   printReply();
-  esp.write("AT+CIPMODE=1\r\n");
+  esp.write("AT+CIPMODE=1\r\n"); // set to unvarnished transmission mode
   printReply();
-  esp.write("AT+CIPSEND\r\n");
+  esp.write("AT+CIPSEND\r\n"); // start sending data
 }
 
 void loop() {
@@ -26,10 +23,7 @@ void loop() {
     uint8_t *p = (uint8_t*) &temperature;
 
     // send the temperature to the server 
-    //esp.write("AT+CIPSEND=19\r\n");
     esp.write((uint8_t*) &temperature, 4);
-
-    printReply();
 
     delay(2000);
 }

@@ -3,6 +3,7 @@
 import socket
 import netifaces
 import struct
+from datetime import datetime
 
 port = 8888
 
@@ -16,18 +17,25 @@ try:
     clientSocket, address = serverSocket.accept() 
     print("Got a connection from %s" % str(address))
 
+    t0 = datetime.now().strftime('%d-%m-%y_%H:%M:%S')
+    
     while True:
-        recvBuffer = clientSocket.recv(4096)
-        print('received %d bytes' % len(recvBuffer))
-        print('received: %s' % recvBuffer)
 
-        # if len(recvBuffer) == 4:
-        temperature = struct.unpack('<f', recvBuffer[-4:])
-        print('temperature = %.2f C' % temperature)
-        # else:
-        #     print("incorrect number of bytes received")
+        with open('../log/temperature_%s.log' % t0, 'a') as f:
 
-except:
+            recvBuffer = clientSocket.recv(4096)
+            print('received %d bytes' % len(recvBuffer))
+            print('received: %s' % recvBuffer)
+
+            temperature = struct.unpack('<f', recvBuffer[-4:])[0]
+            print('temperature = %.2f C' % temperature)
+
+            t = datetime.now().strftime('%d-%m-%y_%H:%M:%S')
+            f.write('%s %.2f\n' % (t, temperature))
+
+
+except Exception as e:
+    print('Exception: %s' % str(e))
     print('closing socket')
     serverSocket.close()
     exit()

@@ -1,4 +1,4 @@
-#define N_SAMPLES 10
+#define N_SAMPLES 100
 
 void setup () 
 {
@@ -9,14 +9,14 @@ void setup ()
 void loop () 
 { 
   int i;
-  int sum = 0;
+  long sum = 0;
   for (i = 0; i < N_SAMPLES; i++) {
-    sum += analogRead(A4);
+    sum += analogRead(A2);
   }
   double voltage = (double) sum / (double) N_SAMPLES / 1024.0 * 1.1;
   //double voltage = analogRead(A4) / 1024.0 * 1.1;
   Serial.print("temperature = ");
-  Serial.print(voltage * 100.0);
+  Serial.print((voltage - 0.5) * 100.0);
   Serial.println(" C");
   delay(1000);
 }

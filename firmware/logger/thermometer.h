@@ -1,4 +1,4 @@
-#define N_SAMPLES 10
+#define N_SAMPLES 100
 
 class Thermometer {
 
