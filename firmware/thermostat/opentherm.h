@@ -1,14 +1,17 @@
-#include "Arduino.h"
-#include <stdint.h>
+#ifndef OPENTHERM_H
+#define OPENTHERM_H
 
+#include <stdint.h>
+#include "Arduino.h"
+#include "common.h"
 
 #define ID_STATUS               0
 #define ID_SETPOINT             1   // write-only
 #define ID_SLAVE_CONFIG         3
-#define ID_FAULT                5 
+#define ID_FAULT                5
 #define ID_MODULATION_LEVEL     17
 #define ID_WATER_PRESSURE       18  // not supported
-#define ID_DHW_FLOW_RATE        19 
+#define ID_DHW_FLOW_RATE        19
 #define ID_BOILER_WATER_TEMP    25
 #define ID_DHW_TEMP             26
 #define ID_RETURN_WATER_TEMP    28  // not supported
@@ -17,10 +20,10 @@
 
 
 // receive error code
-enum ErrorCode {ERR_NONE, 
-                ERR_FIRST_EDGE,  
-                ERR_EDGE_EARLY, 
-                ERR_EDGE_LATE, 
+enum ErrorCode {ERR_NONE,
+                ERR_FIRST_EDGE,
+                ERR_EDGE_EARLY,
+                ERR_EDGE_LATE,
                 ERR_TIMEOUT};
 
 enum MsgType   {READ_DATA,
@@ -40,31 +43,31 @@ const String MSG_TYPE[8] = {"READ_DATA",
 class OpenTherm {
 
 public:
-    
+
     volatile bool recvFlag;           // receive data available flag. can be polled to check for received messages
     volatile uint64_t recvData;       // receive data buffer
     volatile ErrorCode recvErrorCode; // receive error buffer
-    volatile int recvErrorFlag;   // flag is set when a receive error is encountered 
-    volatile int recvCount;       // count received bits
-    int interruptNumber;
+    volatile int recvErrorFlag;       // flag is set when a receive error is encountered
+    volatile int recvCount;           // count received bits
 
     // constructor
-    OpenTherm(int, int, int);
+    OpenTherm (int inPin,
+               int outPin);
 
     // send a frame over the opentherm interface
-    void sendFrame(uint32_t, uint32_t, uint32_t);
+    void sendFrame (uint32_t msgType, uint32_t dataId, uint32_t dataValue);
 
     // handle communication timeouts
-    void wdtIsr();
+    void wdtIsr ();
 
     // parse changes on the opentherm input
-    void recvIsr();
+    void otIsr ();
 
     // pretty print a message
-    static void printMsg(uint64_t);
+    static void printMsg (uint64_t);
 
     // calculate the positive parity bit value for a 32 bit word
-    static uint32_t parity32(uint32_t);
+    static uint32_t parity32 (uint32_t);
 
 private:
 
@@ -75,9 +78,11 @@ private:
     bool recvBusyFlag;   // flag is active during the parsing of a message
     uint64_t recvBuffer; // buffer for incoming data
     int midBitFlag;      // flag set after a mid cycle transition has occurred
-    unsigned long recvTimeRef; 
+    unsigned long recvTimeRef;
 
     // send a single machester encoded bit over the opentherm interface
     void sendMachesterBit(bool);
-    
+
 };
+
+#endif OPENTHERM_H

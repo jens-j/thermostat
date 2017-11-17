@@ -1,16 +1,23 @@
 #include "Arduino.h"
 #include "TimerOne.h"
+#include "common.h"
 #include "pid.h"
 
 Pid *pidInstance = NULL;
 
-void ISR_DISP ()
+void TIMER1_ISR ()
 {
     pidInstance->handleInterrupt();
 }
 
-Pid::Pid (float period, float kP, float kI, float kD,
-          float iMax, inputFunc fI, outputFunc fO, float setpoint)
+Pid::Pid (float period,
+          float kP,
+          float kI,
+          float kD,
+          float iMax,
+          float setpoint,
+          inputFunc fI,
+          outputFunc fO)
 {
     period_ = period;
     kP_ = kP;
@@ -25,7 +32,7 @@ Pid::Pid (float period, float kP, float kI, float kD,
 
     // set up the timer interrupt throught the static interface
     Timer1.initialize(period);
-    Timer1.attachInterrupt(ISR_DISP);
+    Timer1.attachInterrupt(TIMER1_ISR);
 
     // asign the global object pointer to this instance
     // this allows the global interupt dispatch function to call this instances interrupt handler

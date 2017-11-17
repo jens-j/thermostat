@@ -1,15 +1,26 @@
-#include <avr/wdt.h>
 #include <stdint.h>
+#include <avr/wdt.h>
 #include "Arduino.h"
+#include "common.h"
 #include "opentherm.h"
 
+OpenTherm *otInstance = NULL;
 
-OpenTherm::OpenTherm(int inPin, int outPin, int interruptNr) {
+// opentherm message receive timeout
+ISR(WDT_vect) {
+    otInstance->wdtIsr();
+}
+
+// external interrupt on the opentherm input pin
+void EXT_ISR() {
+    otInstance->otIsr();
+}
+
+OpenTherm::OpenTherm(int inPin, int outPin) {
 
     // store configuration
     inputPin = inPin;
     outputPin = outPin;
-    interruptNumber = interruptNr;
 
     // initialize variables
     recvFlag = false;
@@ -21,16 +32,21 @@ OpenTherm::OpenTherm(int inPin, int outPin, int interruptNr) {
 
     // set IO direction
     pinMode(inputPin, INPUT);
-    pinMode(outputPin, OUTPUT); 
+    pinMode(outputPin, OUTPUT);
     digitalWrite(outputPin, HIGH);
+
+    // asign the global object pointer to this instance
+    // this allows the global interupt dispatch function to call this instances interrupt handler
+    otInstance = this;
+
+    // set up external interrupt
+    attachInterrupt(PIN_TO_INT(inPin), EXT_ISR, CHANGE);
 
     // set up WDT interrupt
     wdt_reset();
     WDTCSR |= (1 << WDCE) | (1 << WDE); // change enable
     WDTCSR = (1 << WDP0); // 64 ms
-
 }
-
 
 void OpenTherm::sendFrame(uint32_t msgType, uint32_t dataId, uint32_t dataValue) {
 
@@ -46,8 +62,6 @@ void OpenTherm::sendFrame(uint32_t msgType, uint32_t dataId, uint32_t dataValue)
     sprintf(printBuffer, "\nsend: 0x%08lx", msg);
     Serial.println(printBuffer);
 
-    //detachInterrupt(interruptNumberr);
-
     // Send start bit
     sendMachesterBit(true);
 
@@ -59,10 +73,7 @@ void OpenTherm::sendFrame(uint32_t msgType, uint32_t dataId, uint32_t dataValue)
 
     // Send stop bit
     sendMachesterBit(true);
-
-    //attachInterrupt(interruptNumberr, recvIsr, CHANGE);
 }
-
 
 // pretty print an opentherm frame
 void OpenTherm::printMsg(uint64_t msg) {
@@ -78,7 +89,7 @@ void OpenTherm::printMsg(uint64_t msg) {
 
     if (!(msg & 0x200000000ULL))
         Serial.println("missing start bit!");
-    if (!(msg & 1)) 
+    if (!(msg & 1))
         Serial.println("missing stop bit!");
     if (OpenTherm::parity32(msg) == 0)
         Serial.println("Parity error!");
@@ -97,7 +108,7 @@ uint32_t OpenTherm::parity32(uint32_t x) {
 
     int i;
     uint32_t parity = 0UL;
-  
+
     for (i = 0; i < 32; i++) {
         if (x & 1UL == 1UL) {
             parity = parity ^ 1UL;
@@ -121,7 +132,7 @@ void OpenTherm::wdtIsr() {
 
 // Parse manchester encoded frames from the opentherm interface.
 // Each frame consists of a 32 bit message together with positive start and stop bits
-void OpenTherm::recvIsr() {
+void OpenTherm::otIsr() {
 
     uint32_t t = micros();
     int inputState = digitalRead(inputPin);
@@ -148,7 +159,7 @@ void OpenTherm::recvIsr() {
         recvBuffer = 0x00000000;
         midBitFlag = false;
         WDTCSR |= (1<<WDIE); // Enable wdt interrupt
-    } 
+    }
     // First clock transition of the start bit
     else if (recvCount == 0) {
 
@@ -160,10 +171,10 @@ void OpenTherm::recvIsr() {
         } else {
             recvBuffer = (recvBuffer << 1) | 1UL;
         }
-    } 
+    }
     // All other transitions
     else {
-        // check for half cycle transitions 
+        // check for half cycle transitions
         if (t - recvTimeRef < 900) {
             if (midBitFlag == false) {
                 midBitFlag = true;
@@ -172,7 +183,7 @@ void OpenTherm::recvIsr() {
                 recvErrorFlag = true;
                 recvErrorCode = ERR_EDGE_EARLY;
             }
-        } 
+        }
         // valid bit transition
         else if (t - recvTimeRef < 1150) {
 
@@ -212,5 +223,3 @@ void OpenTherm::sendMachesterBit(bool val) {;
     t = micros();
     while (micros() - t < 500) {}
 }
-
-

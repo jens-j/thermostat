@@ -1,15 +1,21 @@
 #ifndef PID_H
 #define PID_H
 
-typedef void (*inputFunc) (float);
-typedef float (*outputFunc) ();
+#include "common.h"
 
 class Pid {
 
 public:
 
-    Pid (float period, float kP, float kI, float kD,
-         float iMax, inputFunc fI, outputFunc fO, float setpoint);
+    Pid (float period,
+         float kP,
+         float kI,
+         float kD,
+         float iMax,
+         float setpoint,
+         inputFunc fI,
+         outputFunc fO);
+         
     void handleInterrupt ();
     void changeSetpoint (float setpoint) {setpoint_ = setpoint;}
     void changeCoefficients (float kP, float kI, float kD);

@@ -4,9 +4,10 @@
 Thermometer::Thermometer (int pin, int nAverages) {
     pin_ = pin;
     nAverages_ = nAverages;
+    pinMode(pin, INPUT);
 }
 
-Thermometer::readTemperature () {
+float Thermometer::readTemperature () {
     int i;
     uint32_t sum = 0;
     for (i = 0; i < nAverages_; i++) {
