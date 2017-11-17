@@ -9,7 +9,8 @@ void ISR_DISP ()
     pidInstance->handleInterrupt();
 }
 
-Pid::Pid (float period, float kP, float kI, float kD, float iMax, inputFunc fI, outputFunc fO)
+Pid::Pid (float period, float kP, float kI, float kD,
+          float iMax, inputFunc fI, outputFunc fO, float setpoint)
 {
     period_ = period;
     kP_ = kP;
@@ -18,7 +19,9 @@ Pid::Pid (float period, float kP, float kI, float kD, float iMax, inputFunc fI, 
     iMax_ = iMax;
     fI_ = fI;
     fO_ = fO;
-
+    iTerm_ = 0.0;
+    setpoint_ = setpoint;
+    prevError_ = setpoint_ - fO_();
 
     // set up the timer interrupt throught the static interface
     Timer1.initialize(period);
@@ -31,9 +34,13 @@ Pid::Pid (float period, float kP, float kI, float kD, float iMax, inputFunc fI, 
 
 void Pid::handleInterrupt ()
 {
-
+    float output = fO_();
+    float error = setpoint_ - output;
+    iTerm_ += kI_ * error;
+    float input = kP_ * error + iTerm_ + kD_ * (error - prevError_);
+    fI_(input);
+    prevError_ = error;
 }
-
 
 void Pid::changeCoefficients (float kP, float kI, float kD)
 {
