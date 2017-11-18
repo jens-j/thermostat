@@ -1,57 +1,64 @@
 #include "Arduino.h"
-#include "TimerOne.h"
 #include "common.h"
 #include "pid.h"
 
-Pid *pidInstance = NULL;
 
-void TIMER1_ISR ()
-{
-    pidInstance->handleInterrupt();
-}
-
-Pid::Pid (float period,
-          float kP,
+Pid::Pid (float kP,
           float kI,
           float kD,
           float iMax,
+          float input,
           float setpoint,
-          inputFunc fI,
-          outputFunc fO)
+          float outputMin,
+          float outputMax)
 {
-    period_ = period;
-    kP_ = kP;
-    kI_ = kI;
-    kD_ = kD;
+    changeCoefficients(kP, kI, kD);
     iMax_ = iMax;
-    fI_ = fI;
-    fO_ = fO;
-    iTerm_ = 0.0;
+    prevInput_ = input;
     setpoint_ = setpoint;
-    prevError_ = setpoint_ - fO_();
+    outputMin_ = outputMin;
+    outputMax_ = outputMax;
 
-    // set up the timer interrupt throught the static interface
-    Timer1.initialize(period);
-    Timer1.attachInterrupt(TIMER1_ISR);
-
-    // asign the global object pointer to this instance
-    // this allows the global interupt dispatch function to call this instances interrupt handler
-    pidInstance = this;
+    iTerm_ = 0.0;
+    prevOutput_ = 0;
 }
 
-void Pid::handleInterrupt ()
+float Pid::computeStep (float input)
 {
-    float output = fO_();
-    float error = setpoint_ - output;
+    float error = setpoint_ - input;
+    float dInput = input - prevInput_;
+
     iTerm_ += kI_ * error;
-    float input = kP_ * error + iTerm_ + kD_ * (error - prevError_);
-    fI_(input);
-    prevError_ = error;
+    iTerm_ = constrain(iTerm_, outputMin_, outputMax_);
+
+    // float input = kP_ * error + iTerm_ - kD_ * dInput    // p on e & d on m
+    float output = -kP_ * dInput + iTerm_ - kD_ * dInput; // p on m & d on m
+    output = constrain(output, outputMin_, outputMax_);
+
+    prevInput_ = input;
+    prevOutput_ = output;
+
+    return output;
 }
 
 void Pid::changeCoefficients (float kP, float kI, float kD)
 {
     kP_ = kP;
-    kI_ = kI;
-    kD_ = kD;
+    kI_ = kI * PID_P; // these expressions are taken out of computeStep()
+    kD_ = kD / PID_P; // this avoids performing them every loop iteration
+}
+
+pid_update_log_t Pid::getState ()
+{
+    pid_update_log_t state = {
+        prevInput_,
+        prevOutput_,
+        setpoint_,
+        iTerm_,
+        kP_,
+        kI_,
+        kD_
+    };
+
+    return state;
 }
