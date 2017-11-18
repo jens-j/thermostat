@@ -22,17 +22,19 @@ void TIMER1_ISR ()
 
     // read buttons and update lcd
 
-    msg_tick_counter += USER_INPUT_P;
-    pid_tick_counter += USER_INPUT_P;
+    msg_tick_counter += P_USER_INPUT;
+    pid_tick_counter += P_USER_INPUT;
 
-    if (msg_tick_counter >= MSG_P) {
-        msg_tick_counter -= MSG_P;
+    if (msg_tick_counter >= P_MSG) {
+        msg_tick_counter -= P_MSG;
+
+        // ot keepalive
 
         // handle commands
     }
 
-    if (pid_tick_counter >= PID_P) {
-        pid_tick_counter -= PID_P;
+    if (pid_tick_counter >= P_PID) {
+        pid_tick_counter -= P_PID;
 
         // pid update
         bool success = heater.setTemperature(pid->computeStep(thermometer.readTemperature()));

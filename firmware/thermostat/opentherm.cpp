@@ -75,49 +75,6 @@ void OpenTherm::sendFrame(uint32_t msgType, uint32_t dataId, uint32_t dataValue)
     sendMachesterBit(true);
 }
 
-// pretty print an opentherm frame
-void OpenTherm::printMsg(uint64_t msg) {
-
-    char cBuffer[80];
-
-    int msgType = (msg >> 29) & 0x7;
-    int dataId = (msg >> 17) & 0xff;
-    int dataValue = msg >> 1;
-
-    sprintf(cBuffer, "raw msg: 0x%08lx%08lx", (uint32_t) (msg >> 32), (uint32_t) msg);
-    Serial.println(cBuffer);
-
-    if (!(msg & 0x200000000ULL))
-        Serial.println("missing start bit!");
-    if (!(msg & 1))
-        Serial.println("missing stop bit!");
-    if (OpenTherm::parity32(msg) == 0)
-        Serial.println("Parity error!");
-
-    Serial.print("msg type:   ");
-    Serial.println(MSG_TYPE[msgType]);
-    Serial.print("data id:    ");
-    Serial.println(dataId);
-    Serial.print("data value: ");
-    Serial.println(dataValue);
-}
-
-
-// Calculate the even parity bit for a 32 bit vector
-uint32_t OpenTherm::parity32(uint32_t x) {
-
-    int i;
-    uint32_t parity = 0UL;
-
-    for (i = 0; i < 32; i++) {
-        if (x & 1UL == 1UL) {
-            parity = parity ^ 1UL;
-        }
-        x = x >> 1;
-    }
-   return parity;
-}
-
 
 void OpenTherm::wdtIsr() {
 
@@ -198,6 +155,7 @@ void OpenTherm::otIsr() {
                 recvFlag = true;
                 recvBusyFlag = false;
                 recvData = recvBuffer;
+                recvMsg = parseMessage((uint32_t) (recvBuffer >> 1));
                 return;
             }
             recvTimeRef = t;
@@ -222,4 +180,59 @@ void OpenTherm::sendMachesterBit(bool val) {;
     digitalWrite(outputPin, val);
     t = micros();
     while (micros() - t < 500) {}
+}
+
+
+message_t OpenTherm::parseMessage (uint32_t buf)
+{
+    message_t msg = {
+        (bool) (buf & (1 << 31)),       // parity bit
+        (MsgType) ((msg >> 28) & 0x7);  // msg type
+        (uint8_t) ((msg >> 16) & 0xff); // data id
+        (uint16_t) msg;                 // data value
+    }
+}
+
+
+// pretty print an opentherm frame
+void OpenTherm::printMsg(message_t msg) {
+
+    char cBuffer[80];
+
+    int msgType = (msg >> 29) & 0x7;
+    int dataId = (msg >> 17) & 0xff;
+    int dataValue = msg >> 1;
+
+    sprintf(cBuffer, "raw msg: 0x%08lx%08lx", (uint32_t) (msg >> 32), (uint32_t) msg);
+    Serial.println(cBuffer);
+
+    if (!(msg & 0x200000000ULL))
+        Serial.println("missing start bit!");
+    if (!(msg & 1))
+        Serial.println("missing stop bit!");
+    if (OpenTherm::parity32(msg) == 0)
+        Serial.println("Parity error!");
+
+    Serial.print("msg type:   ");
+    Serial.println(MSG_TYPE[msgType]);
+    Serial.print("data id:    ");
+    Serial.println(dataId);
+    Serial.print("data value: ");
+    Serial.println(dataValue);
+}
+
+
+// Calculate the even parity bit for a 32 bit vector
+uint32_t OpenTherm::parity32(uint32_t x) {
+
+    int i;
+    uint32_t parity = 0UL;
+
+    for (i = 0; i < 32; i++) {
+        if (x & 1UL == 1UL) {
+            parity = parity ^ 1UL;
+        }
+        x = x >> 1;
+    }
+   return parity;
 }

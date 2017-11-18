@@ -2,3 +2,9 @@
   this makes the system closer to an integrating system.
 
 - read the heater water temperature on startup of the pid.
+
+- handle message timing in opentherm or heater class
+
+- check remote parameter availability (dhw temp and max ch temp)
+
+- make a function to check received messages for errors and parses the message

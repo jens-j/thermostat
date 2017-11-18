@@ -22,9 +22,9 @@
 #define SERVER_PORT     8888
 
 // update periods in s
-#define USER_INPUT_P    0.02 // buttons and lcd
-#define MSG_P           1.0  // esp interface
-#define PID_P           2.0  // pid updates
+#define P_USER_INPUT    0.02 // buttons and lcd
+#define P_MSG           1.0  // esp interface
+#define P_PID           2.0  // pid updates
 
 /////////////////////////////////////////////////
 // CONVERSIONS
