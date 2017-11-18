@@ -15,6 +15,7 @@ Pid::Pid (float kP,
     changeCoefficients(kP, kI, kD);
     iMax_ = iMax;
     prevInput_ = input;
+    initInput_ = input;
     setpoint_ = setpoint;
     outputMin_ = outputMin;
     outputMax_ = outputMax;
@@ -26,14 +27,16 @@ Pid::Pid (float kP,
 float Pid::computeStep (float input)
 {
     float error = setpoint_ - input;
-    float dInput = input - prevInput_;
 
     iTerm_ += kI_ * error;
     iTerm_ = constrain(iTerm_, outputMin_, outputMax_);
 
     // float input = kP_ * error + iTerm_ - kD_ * dInput    // p on e & d on m
-    float output = -kP_ * dInput + iTerm_ - kD_ * dInput; // p on m & d on m
+    float output = -kP_ * (input - initInput_) + iTerm_ - kD_ * (input - prevInput_); // p on m & d on m
     output = constrain(output, outputMin_, outputMax_);
+
+    Serial.println(input);
+    Serial.println(initInput_);
 
     prevInput_ = input;
     prevOutput_ = output;
@@ -48,16 +51,16 @@ void Pid::changeCoefficients (float kP, float kI, float kD)
     kD_ = kD / PID_P; // this avoids performing them every loop iteration
 }
 
-pid_update_log_t Pid::getState ()
+pid_state_log_t Pid::getState ()
 {
-    pid_update_log_t state = {
+    pid_state_log_t state = {
         prevInput_,
         prevOutput_,
         setpoint_,
         iTerm_,
         kP_,
-        kI_,
-        kD_
+        kI_ / PID_P,
+        kD_ * PID_P
     };
 
     return state;

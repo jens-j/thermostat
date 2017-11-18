@@ -9,21 +9,22 @@
 // pinout
 #define OT_INPUT_PIN    3
 #define OT_OUTPUT_PIN   12
-#define THERMOMETER_PIN 1 // analog A1
-#define ESP_TX_PIN      11
-#define ESP_RX_PIN      2
+#define THERMOMETER_PIN 4 // analog pin A4
+#define ESP_RX_PIN      11
+#define ESP_TX_PIN      2
 
 // number of averaged ADC samples for temperature readings
 #define N_ADC_AVG       50
 
 // server address
 #define SERVER_IP       "192.168.2.3"
+#define CLIENT_IP       "192.168.2.4"
 #define SERVER_PORT     8888
 
 // update periods in s
 #define USER_INPUT_P    0.02 // buttons and lcd
 #define MSG_P           1.0  // esp interface
-#define PID_P           5.0  // pid updates
+#define PID_P           2.0  // pid updates
 
 /////////////////////////////////////////////////
 // CONVERSIONS
@@ -39,12 +40,12 @@
 // esp communication message types
 // log: arduino -> server
 // cmd: server -> aarduino
-enum MSG_TYPE {PID_UPDATE_LOG,
-               SETPOINT_CMD,
-               PID_COEFFS_CMD};
+enum MSG_TYPE {PID_UPDATE_LOG = 0,
+               SETPOINT_CMD   = 1,
+               PID_COEFFS_CMD = 2};
 
 // pid step update log message structure
-typedef struct pid_update_log_s {
+typedef struct pid_state_log_s {
     float input;
     float output;
     float setpoint;
@@ -52,7 +53,7 @@ typedef struct pid_update_log_s {
     float kP;
     float kI;
     float kD;
-} pid_update_log_t;
+} pid_state_log_t;
 
 // system setpoint update message
 typedef struct setpoint_cmd_s {

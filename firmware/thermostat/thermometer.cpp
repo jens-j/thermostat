@@ -5,6 +5,7 @@ Thermometer::Thermometer (int pin, int nAverages) {
     pin_ = pin;
     nAverages_ = nAverages;
     pinMode(pin, INPUT);
+    analogReference(INTERNAL);
 }
 
 float Thermometer::readTemperature () {

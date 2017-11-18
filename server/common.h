@@ -1,0 +1,1 @@
+../firmware/thermostat/common.h

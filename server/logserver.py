@@ -14,11 +14,11 @@ print('server bound to %s:%d' % (socket.gethostname(), port))
 serverSocket.listen(1)
 
 try:
-    clientSocket, address = serverSocket.accept() 
+    clientSocket, address = serverSocket.accept()
     print("Got a connection from %s" % str(address))
 
     t0 = datetime.now().strftime('%d-%m-%y_%H:%M:%S')
-    
+
     while True:
 
         with open('../log/temperature_%s.log' % t0, 'a') as f:
@@ -27,11 +27,18 @@ try:
             print('received %d bytes' % len(recvBuffer))
             print('received: %s' % recvBuffer)
 
-            temperature = struct.unpack('<f', recvBuffer[-4:])[0]
-            print('temperature = %.2f C' % temperature)
+            msgType, input, output, setPoint, iTerm, kP, kI, kD = \
+                struct.unpack('<Bfffffff', recvBuffer[-29:])
 
-            t = datetime.now().strftime('%d-%m-%y_%H:%M:%S')
-            f.write('%s %.2f\n' % (t, temperature))
+            if msgType != 0:
+                print('unknown message type (%x)' % msgType)
+            else:
+                dateTime = datetime.now().strftime('%d-%m-%y_%H:%M:%S')
+                s = '%s: ti = %.2f C, to = %.2f C, ts = %.2f C, iTerm = %.2f, kP = %.2f, kI = %.2f, kD = %.2f\n' \
+                    % (dateTime, input, output, setPoint, iTerm, kP, kI, kD)
+
+                f.write(s)
+                print(s)
 
 
 except Exception as e:

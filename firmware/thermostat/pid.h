@@ -27,7 +27,7 @@ public:
     void changeCoefficients (float kP, float kI, float kD);
 
     // return a struct containing the controllers state
-    pid_update_log_t getState ();
+    pid_state_log_t getState ();
 
 private:
 
@@ -38,6 +38,7 @@ private:
     float iTerm_;       // integral accumulator
     float setpoint_;    // system setpoint
     float prevInput_;   // last pid input
+    float initInput_;   // input on startup
     float prevOutput_;  // last pid output
     float outputMin_;   // minimal value for the pid output
     float outputMax_;   // maximal value for the pid output

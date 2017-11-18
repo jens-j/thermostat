@@ -10,8 +10,8 @@ public:
     // cosntructor
     Esp (int rx, int tx);
 
-    void logPidUpdate (pid_update_log_t update);
-
+    void logPidState (pid_state_log_t update);
+    void printReply ();
 
 private:
 
