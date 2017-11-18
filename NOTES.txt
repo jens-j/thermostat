@@ -1,0 +1,4 @@
+- take the difference between the heater water temperature and the room temperature?
+  this makes the system closer to an integrating system.
+
+- read the heater water temperature on startup of the pid.
