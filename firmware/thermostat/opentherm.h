@@ -36,6 +36,7 @@
 #define T_MASTER_IDLE               100  // [ms]
 #define T_KEEPALIVE                 1150 // [ms]
 
+// opentherm 32 bit message structure
 typedef struct message_s {
     bool        parity;
     MsgType     msgType;
@@ -43,42 +44,59 @@ typedef struct message_s {
     uint16_t    dataValue;
 } message_t;
 
-// receive error code
-enum ErrorCode {ERR_NONE,
-                ERR_FIRST_EDGE,
-                ERR_EDGE_EARLY,
-                ERR_EDGE_LATE,
-                ERR_TIMEOUT};
+// receive error codes
+enum ot_recv_error_t {ERR_NONE,
+                      ERR_FIRST_EDGE, // first edge has wrong direction
+                      ERR_EDGE_EARLY, // edge arrived too early for specifications
+                      ERR_EDGE_LATE,  // edge arrived too late for specifications
+                      ERR_TIMEOUT};   // communication timeout (too few bits received)
 
-enum MsgType   {READ_DATA,
-                WRITE_DATA,
-                INVALID_DATA,
-                RESERVED,
-                READ_ACK,
-                DATA_INVALID,
-                UNKNOWN_DATA_ID};
+// receive error codes
+#define OT_PARSE_ERR_NONE   0x0
+#define OT_PARSE_ERR_START  0x1 // missing start bit
+#define OT_PARSE_ERR_STOP   0x2 // missing stop bit
+#define OT_PARSE_ERR_PARITY 0x4 // incorrectly set parity bit
+#define OT_PARSE_ERR_SIZE   0x8 // too much bits
 
-const String MSG_TYPE[8] = {"READ_DATA",        // master to slave
-                            "WRITE_DATA",       // |
-                            "INVALID_DATA",     // |
-                            "RESERVED",
-                            "READ_ACK",         // slave to master
-                            "WRITE_ACK",        // |
-                            "DATA_INVALID",     // |
-                            "UNKNOWN_DATA_ID"}; // |
+// opentherm message ids
+enum ot_msg_t {READ_DATA,
+               WRITE_DATA,
+               INVALID_DATA,
+               RESERVED,
+               READ_ACK,
+               DATA_INVALID,
+               UNKNOWN_DATA_ID};
 
+// message id strings for printings
+const String OT_MSG_T_STR[8] = {"READ_DATA",        // master to slave
+                                "WRITE_DATA",       // |
+                                "INVALID_DATA",     // |
+                                "RESERVED",         // |
+                                "READ_ACK",         // slave to master
+                                "WRITE_ACK",        // |
+                                "DATA_INVALID",     // |
+                                "UNKNOWN_DATA_ID"}; // |
 
+// opentherm receive error strings
+const String OT_RECV_ERROR_T_STR[8] = {"ERR_NONE",
+                                       "ERR_FIRST_EDGE",
+                                       "ERR_EDGE_EARLY",
+                                       "ERR_EDGE_LATE",
+                                       "ERR_TIMEOUT"};
 
+// Opentherm interface class
+// this class can send frames by bitbanging the ot interface.
+// And external interrupt is used to receive replies.
+//
 class OpenTherm {
 
 public:
 
-    volatile bool recvFlag;           // receive data available flag. can be polled to check for received messages
-    volatile uint64_t recvData;       // receive data buffer
-    volatile message_t recvMsg;       // receive message struct
-    volatile ErrorCode recvErrorCode; // receive error buffer
-    volatile int recvErrorFlag;       // flag is set when a receive error is encountered
-    volatile int recvCount;           // count received bits
+    volatile bool recvFlag;                 // receive data available flag. can be polled to check for received messages
+    volatile uint64_t recvData;             // receive data buffer
+    volatile int recvErrorFlag;             // flag is set when a receive error is encountered
+    volatile ot_recv_error_t recvErrorCode; // receive error buffer
+    volatile int recvCount;                 // count received bits
 
     // constructor
     OpenTherm (int inPin,
@@ -93,24 +111,30 @@ public:
     // parse changes on the opentherm input
     void otIsr ();
 
-    static message_t parseMessage (uint64_t);
+    // parses a 34 bit frame to a message struct and returns true if the start,
+    // stop and parity bits were set correctly
+    static bool parseFrame (uint64_t buf, message_t *msg);
+
+    // parse a 32 bit message into separate fields
+    static message_t parseMessage (uint32_t msg);
 
     // pretty print a message
-    static void printMsg (message_t);
+    static void printFrame (uint64_t buf);
 
     // calculate the positive parity bit value for a 32 bit word
-    static uint32_t parity32 (uint32_t);
+    static uint32_t parity32 (uint32_t mag);
 
 private:
 
     // pin configuration
-    int inputPin;
-    int outputPin;
+    int inputPin_;
+    int outputPin_;
 
-    bool recvBusyFlag;   // flag is active during the parsing of a message
-    uint64_t recvBuffer; // buffer for incoming data
-    int midBitFlag;      // flag set after a mid cycle transition has occurred
-    unsigned long recvTimeRef;
+    bool recvBusyFlag_;         // flag is active during the parsing of a message
+    uint64_t recvBuffer_;       // buffer for incoming data
+    int midBitFlag_;            // flag set after a mid cycle transition has occurred
+    unsigned long recvTimeRef_; // [ms] timestamp of last observed ot level change
+    unsigned long idleTimeRef_; // [ms] timestamp of the end of the last received frame
 
     // send a single machester encoded bit over the opentherm interface
     void sendMachesterBit(bool);

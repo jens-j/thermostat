@@ -40,9 +40,9 @@
 // esp communication message types
 // log: arduino -> server
 // cmd: server -> aarduino
-enum MSG_TYPE {PID_UPDATE_LOG = 0,
-               SETPOINT_CMD   = 1,
-               PID_COEFFS_CMD = 2};
+enum esp_msg_t {PID_UPDATE_LOG = 0,
+                SETPOINT_CMD   = 1,
+                PID_COEFFS_CMD = 2};
 
 // pid step update log message structure
 typedef struct pid_state_log_s {

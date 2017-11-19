@@ -9,18 +9,22 @@ Heater::Heater (int openthermIn, int openthermOut)
 
 bool Heater::setTemperature (float temperature)
 {
-    long t0 = millis();
-
     ot_->sendFrame(WRITE_DATA, ID_CONTROL_SETPOINT, (uint32_t) temperature);
+    return recvReply(T_SLAVE_RESP, true);
+}
 
-    while (millis() - t0 < T_SLAVE_RESP) {
+bool Heater::recvReply(int timeout, bool print)
+{
+    unsigned long t0 = millis();
+
+    while (millis() - t0 < timeout) {
 
         // print errors
         if (ot.recvErrorCode != ERR_NONE) {
             code = ot.recvErrorCode;
             ot.recvErrorCode = ERR_NONE;
             ot.recvErrorFlag = false;
-            sprintf(cBuffer, "\nerror: %d", code);
+            sprintf(cBuffer, "\nrecv error: %s", OT_RECV_ERROR_T_STR[code]);
             Serial.println(cBuffer);
             return false;
         }
@@ -28,13 +32,10 @@ bool Heater::setTemperature (float temperature)
         // print messages
         if (ot.recvFlag == true) {
             ot.recvFlag = false;
-            Serial.println("\nreceived:");
-            OpenTherm::printMsg(ot.recvData);
+            OpenTherm::printFrame(ot.recvData);
             return true;
         }
     }
 
     return false;
 }
-
-bool

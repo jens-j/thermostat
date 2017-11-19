@@ -19,28 +19,32 @@ void EXT_ISR() {
 OpenTherm::OpenTherm(int inPin, int outPin) {
 
     // store configuration
-    inputPin = inPin;
-    outputPin = outPin;
+    inputPin_ = inPin;
+    outputPin_ = outPin;
 
     // initialize variables
     recvFlag = false;
     recvData = 0ULL;
-    recvErrorCode = ERR_NONE;
-    recvBuffer = 0ULL;
-    recvCount = 0;
     recvErrorFlag = false;
+    recvErrorCode = ERR_NONE;
+    recvCount = 0;
+    recvBusyFlag_ = false;
+    recvBuffer_ = 0ULL;
+    midBitFlag_ = false;
+    recvTimeRef_ = 0UL;
+    idleTimeRef_ = 0UL;
 
     // set IO direction
-    pinMode(inputPin, INPUT);
-    pinMode(outputPin, OUTPUT);
-    digitalWrite(outputPin, HIGH);
+    pinMode(inputPin_, INPUT);
+    pinMode(outputPin_, OUTPUT);
+    digitalWrite(outputPin_, HIGH);
 
     // asign the global object pointer to this instance
     // this allows the global interupt dispatch function to call this instances interrupt handler
     otInstance = this;
 
     // set up external interrupt
-    attachInterrupt(PIN_TO_INT(inPin), EXT_ISR, CHANGE);
+    attachInterrupt(PIN_TO_INT(inputPin_), EXT_ISR, CHANGE);
 
     // set up WDT interrupt
     wdt_reset();
@@ -53,11 +57,14 @@ void OpenTherm::sendFrame(uint32_t msgType, uint32_t dataId, uint32_t dataValue)
     char printBuffer[80];
     uint32_t mask = 0x80000000;
 
+    // messages can not be sent less than 100 ms after the last reply was received
+    while (millis() - idleTimeRef_ < T_MASTER_IDLE) {}
+
     // Create the message
     uint32_t msg = (uint32_t) dataValue;
     msg |= (uint32_t) dataId << 16;
     msg |= (uint32_t) msgType << 28;
-    msg |= parity32(msg) << 31;
+    msg |= parity32(msg);
 
     sprintf(printBuffer, "\nsend: 0x%08lx", msg);
     Serial.println(printBuffer);
@@ -78,12 +85,11 @@ void OpenTherm::sendFrame(uint32_t msgType, uint32_t dataId, uint32_t dataValue)
 
 void OpenTherm::wdtIsr() {
 
-    // Disable wdt interrupt
-    WDTCSR &= ~(1<<WDIE);
-
-    recvErrorCode = ERR_TIMEOUT;
+    WDTCSR &= ~(1<<WDIE); // Disable wdt interrupt
+    recvErrorCode = (recvErrorCode == ERR_NONE) ? ERR_TIMEOUT : recvErrorCode;
     recvErrorFlag = false;
-    recvBusyFlag = false;
+    recvBusyFlag_ = false;
+    idleTimeRef_ = millis();
 }
 
 
@@ -92,7 +98,7 @@ void OpenTherm::wdtIsr() {
 void OpenTherm::otIsr() {
 
     uint32_t t = micros();
-    int inputState = digitalRead(inputPin);
+    int inputState = digitalRead(_inputPin);
     wdt_reset();
 
     //Serial.println(digitalRead(inputPin));
@@ -104,37 +110,36 @@ void OpenTherm::otIsr() {
     }
 
     // Discard the first transition of the start bit and initialize variables
-    if (recvBusyFlag == false) {
+    if (recvBusyFlag_ == false) {
         // the first edge should always be positive
         if (!inputState) {
             recvErrorCode = ERR_FIRST_EDGE;
             return;
         }
-        //Serial.println(1);
-        recvBusyFlag = true;
+        recvBusyFlag_ = true;
         recvCount = 0;
-        recvBuffer = 0x00000000;
-        midBitFlag = false;
+        recvBuffer_ = 0x00000000;
+        midBitFlag_ = false;
         WDTCSR |= (1<<WDIE); // Enable wdt interrupt
     }
     // First clock transition of the start bit
     else if (recvCount == 0) {
 
         // this is the messages first bit transition
-        recvTimeRef = t;
+        recvTimeRef_ = t;
         recvCount++;
         if (inputState) {
-            recvBuffer = recvBuffer << 1;
+            recvBuffer_ = recvBuffer_ << 1;
         } else {
-            recvBuffer = (recvBuffer << 1) | 1UL;
+            recvBuffer_ = (recvBuffer_ << 1) | 1UL;
         }
     }
     // All other transitions
     else {
         // check for half cycle transitions
-        if (t - recvTimeRef < 900) {
-            if (midBitFlag == false) {
-                midBitFlag = true;
+        if (t - recvTimeRef_ < 900) {
+            if (midBitFlag_ == false) {
+                midBitFlag_ = true;
                 return;
             } else {
                 recvErrorFlag = true;
@@ -142,24 +147,24 @@ void OpenTherm::otIsr() {
             }
         }
         // valid bit transition
-        else if (t - recvTimeRef < 1150) {
+        else if (t - recvTimeRef_ < 1150) {
 
             if (inputState) {
-                recvBuffer = recvBuffer << 1;
+                recvBuffer_ = recvBuffer_ << 1;
             } else {
-                recvBuffer = (recvBuffer << 1) | 1UL;
+                recvBuffer_ = (recvBuffer_ << 1) | 1UL;
             }
 
             if (++recvCount == 34) {
                 WDTCSR &= ~(1<<WDIE); // Disable wdt interrupt
                 recvFlag = true;
-                recvBusyFlag = false;
-                recvData = recvBuffer;
-                recvMsg = parseMessage((uint32_t) (recvBuffer >> 1));
+                recvBusyFlag_ = false;
+                recvData = recvBuffer_;
+                idleTimeRef_ = millis();
                 return;
             }
-            recvTimeRef = t;
-            midBitFlag = false;
+            recvTimeRef_ = t;
+            midBitFlag_ = false;
         }
         // edge arrived too late
         else {
@@ -169,70 +174,89 @@ void OpenTherm::otIsr() {
     }
 }
 
-
 // Send a single machester encoded bit.
 void OpenTherm::sendMachesterBit(bool val) {;
     unsigned long t;
 
-    digitalWrite(outputPin, not val);
+    digitalWrite(outputPin_, not val);
     t = micros();
     while (micros() - t < 500) {}
-    digitalWrite(outputPin, val);
+    digitalWrite(outputPin_, val);
     t = micros();
     while (micros() - t < 500) {}
 }
 
+// parses a 34 bit frame to a message struct
+// returns the bitwise or of all applicable error codes
+static uint8_t OpenTherm::parseFrame (uint64_t buf, message_t *msg)
+{
+    uint8_t error = OT_PARSE_ERR_NONE;
 
+    *msg = parseMessage((uint32_t) buf >> 1);
+
+    if ((buf & 1) != 0ULL) {
+        error |= OT_PARSE_ERR_START;
+    }
+    if ((buf & (1 << 33)) != 0ULL) {
+        error |= OT_PARSE_ERR_STOP;
+    }
+    if (*msg & (1 << 31) != parity32(*msg)) {
+        error |= OT_PARSE_ERR_PARITY;
+    }
+    if (buf & 0xfffffffc00000000ULL != 0ULL) {
+        error |= OT_PARSE_ERR_SIZE;
+    }
+
+    return error;
+}
+
+// parse a 32 bit message into separate fields
 message_t OpenTherm::parseMessage (uint32_t buf)
 {
     message_t msg = {
         (bool) (buf & (1 << 31)),       // parity bit
-        (MsgType) ((msg >> 28) & 0x7);  // msg type
+        (ot_msg_t) ((msg >> 28) & 0x7); // msg type
         (uint8_t) ((msg >> 16) & 0xff); // data id
         (uint16_t) msg;                 // data value
     }
 }
 
-
 // pretty print an opentherm frame
-void OpenTherm::printMsg(message_t msg) {
+void OpenTherm::printFrame(uint64_t buf) {
 
     char cBuffer[80];
-
-    int msgType = (msg >> 29) & 0x7;
-    int dataId = (msg >> 17) & 0xff;
-    int dataValue = msg >> 1;
+    message_t msg;
 
     sprintf(cBuffer, "raw msg: 0x%08lx%08lx", (uint32_t) (msg >> 32), (uint32_t) msg);
     Serial.println(cBuffer);
 
-    if (!(msg & 0x200000000ULL))
-        Serial.println("missing start bit!");
-    if (!(msg & 1))
-        Serial.println("missing stop bit!");
-    if (OpenTherm::parity32(msg) == 0)
-        Serial.println("Parity error!");
+    bool succes = parseFrame(buf, &msg);
+    if (!success) {
+        Serial.println("Incorrect message format");
+    }
 
     Serial.print("msg type:   ");
-    Serial.println(MSG_TYPE[msgType]);
+    Serial.println(OT_MSG_T_STR[msg.msgType]);
     Serial.print("data id:    ");
-    Serial.println(dataId);
+    Serial.println(msg.dataId);
     Serial.print("data value: ");
-    Serial.println(dataValue);
+    Serial.println(msg.dataValue);
 }
 
 
 // Calculate the even parity bit for a 32 bit vector
-uint32_t OpenTherm::parity32(uint32_t x) {
+// the parity bit is already shifted to the right location (bit 31)
+uint32_t OpenTherm::parity32(uint32_t msg) {
 
     int i;
     uint32_t parity = 0UL;
 
-    for (i = 0; i < 32; i++) {
-        if (x & 1UL == 1UL) {
+    for (i = 0; i < 31; i++) { // skip the parity bit itself
+        if (msg & 1UL == 1UL) {
             parity = parity ^ 1UL;
         }
-        x = x >> 1;
+        msg = msg >> 1;
     }
-   return parity;
+
+   return parity << 31;
 }
