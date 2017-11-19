@@ -25,12 +25,12 @@ OpenTherm::OpenTherm(int inPin, int outPin) {
     // initialize variables
     recvFlag = false;
     recvData = 0ULL;
-    recvErrorFlag = false;
     recvErrorCode = ERR_NONE;
     recvCount = 0;
     recvBusyFlag_ = false;
     recvBuffer_ = 0ULL;
     midBitFlag_ = false;
+    recvErrorFlag_ = false;
     recvTimeRef_ = 0UL;
     idleTimeRef_ = 0UL;
 
@@ -86,8 +86,12 @@ void OpenTherm::sendFrame(uint32_t msgType, uint32_t dataId, uint32_t dataValue)
 void OpenTherm::wdtIsr() {
 
     WDTCSR &= ~(1<<WDIE); // Disable wdt interrupt
-    recvErrorCode = (recvErrorCode == ERR_NONE) ? ERR_TIMEOUT : recvErrorCode;
-    recvErrorFlag = false;
+
+    if (recvErrorCode == OT_RECV_ERR_NONE) {
+        setRecvError(OT_RECV_ERR_TIMEOUT);
+    }
+
+    recvErrorFlag_ = false;
     recvBusyFlag_ = false;
     idleTimeRef_ = millis();
 }
@@ -99,13 +103,11 @@ void OpenTherm::otIsr() {
 
     uint32_t t = micros();
     int inputState = digitalRead(_inputPin);
+
     wdt_reset();
 
-    //Serial.println(digitalRead(inputPin));
-
     // If an error happened, discard all data and wait for a timeout
-    if (recvErrorFlag == true) {
-        recvCount++;
+    if (recvErrorFlag_ == true) {
         return;
     }
 
@@ -113,7 +115,7 @@ void OpenTherm::otIsr() {
     if (recvBusyFlag_ == false) {
         // the first edge should always be positive
         if (!inputState) {
-            recvErrorCode = ERR_FIRST_EDGE;
+            setRecvError(ERR_FIRST_EDGE);
             return;
         }
         recvBusyFlag_ = true;
@@ -125,14 +127,10 @@ void OpenTherm::otIsr() {
     // First clock transition of the start bit
     else if (recvCount == 0) {
 
-        // this is the messages first bit transition
+        // this is the frames first bit transition
         recvTimeRef_ = t;
         recvCount++;
-        if (inputState) {
-            recvBuffer_ = recvBuffer_ << 1;
-        } else {
-            recvBuffer_ = (recvBuffer_ << 1) | 1UL;
-        }
+        recvBuffer_ = inputState ? recvBuffer_ << 1 : (recvBuffer_ << 1) | 1ULL; // shift received bit into the buffer
     }
     // All other transitions
     else {
@@ -142,24 +140,21 @@ void OpenTherm::otIsr() {
                 midBitFlag_ = true;
                 return;
             } else {
-                recvErrorFlag = true;
-                recvErrorCode = ERR_EDGE_EARLY;
+                setRecvError(ERR_EDGE_EARLY);
             }
         }
         // valid bit transition
         else if (t - recvTimeRef_ < 1150) {
 
-            if (inputState) {
-                recvBuffer_ = recvBuffer_ << 1;
-            } else {
-                recvBuffer_ = (recvBuffer_ << 1) | 1UL;
-            }
+            // shift received bit into the buffer
+            recvBuffer_ = inputState ? recvBuffer_ << 1 : (recvBuffer_ << 1) | 1ULL;
 
+            // end of frame
             if (++recvCount == 34) {
                 WDTCSR &= ~(1<<WDIE); // Disable wdt interrupt
+                recvData = recvBuffer_;
                 recvFlag = true;
                 recvBusyFlag_ = false;
-                recvData = recvBuffer_;
                 idleTimeRef_ = millis();
                 return;
             }
@@ -168,8 +163,7 @@ void OpenTherm::otIsr() {
         }
         // edge arrived too late
         else {
-            recvErrorFlag = true;
-            recvErrorCode = ERR_EDGE_LATE;
+            setRecvError(ERR_EDGE_LATE);
         }
     }
 }
@@ -184,6 +178,12 @@ void OpenTherm::sendMachesterBit(bool val) {;
     digitalWrite(outputPin_, val);
     t = micros();
     while (micros() - t < 500) {}
+}
+
+void OpenTherm::setRecvError (ot_recv_error_t error)
+{
+    recvErrorCode = error;
+    recvErrorFlag_ = true;
 }
 
 // parses a 34 bit frame to a message struct
@@ -222,17 +222,18 @@ message_t OpenTherm::parseMessage (uint32_t buf)
 }
 
 // pretty print an opentherm frame
-void OpenTherm::printFrame(uint64_t buf) {
+void OpenTherm::printFrame(uint64_t frameBuf) {
 
     char cBuffer[80];
     message_t msg;
 
-    sprintf(cBuffer, "raw msg: 0x%08lx%08lx", (uint32_t) (msg >> 32), (uint32_t) msg);
+    sprintf(cBuffer, "raw msg: 0x%08lx%08lx", (uint32_t) (frameBuf >> 32), (uint32_t) frameBuf);
     Serial.println(cBuffer);
 
-    bool succes = parseFrame(buf, &msg);
-    if (!success) {
-        Serial.println("Incorrect message format");
+    bool errorCode = parseFrame(frameBuf, &msg);
+    if (errorCode != OT_PARSE_ERR_NONE) {
+        sprintf(cBuffer, "Incorrect message format (0x%x)", errorCode);
+        Serial.println(cbuffer);
     }
 
     Serial.print("msg type:   ");

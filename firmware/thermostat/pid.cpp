@@ -44,11 +44,20 @@ float Pid::computeStep (float input)
     return output;
 }
 
+void Pid::changeSetpoint (float setpoint);
+{
+    noInterrupts();
+    setpoint_ = setpoint;
+    interrupts();
+}
+
 void Pid::changeCoefficients (float kP, float kI, float kD)
 {
+    noInterrupts();
     kP_ = kP;
     kI_ = kI * PID_P; // these expressions are taken out of computeStep()
     kD_ = kD / PID_P; // this avoids performing them every loop iteration
+    interrupts();
 }
 
 pid_state_log_t Pid::getState ()

@@ -45,11 +45,11 @@ typedef struct message_s {
 } message_t;
 
 // receive error codes
-enum ot_recv_error_t {ERR_NONE,
-                      ERR_FIRST_EDGE, // first edge has wrong direction
-                      ERR_EDGE_EARLY, // edge arrived too early for specifications
-                      ERR_EDGE_LATE,  // edge arrived too late for specifications
-                      ERR_TIMEOUT};   // communication timeout (too few bits received)
+enum ot_recv_error_t {OT_RECV_ERR_NONE,
+                      OT_RECV_ERR_FIRST_EDGE, // first edge has wrong direction
+                      OT_RECV_ERR_EDGE_EARLY, // edge arrived too early for specifications
+                      OT_RECV_ERR_EDGE_LATE,  // edge arrived too late for specifications
+                      OT_RECV_ERR_TIMEOUT};   // communication timeout (too few bits received)
 
 // receive error codes
 #define OT_PARSE_ERR_NONE   0x0
@@ -94,7 +94,6 @@ public:
 
     volatile bool recvFlag;                 // receive data available flag. can be polled to check for received messages
     volatile uint64_t recvData;             // receive data buffer
-    volatile int recvErrorFlag;             // flag is set when a receive error is encountered
     volatile ot_recv_error_t recvErrorCode; // receive error buffer
     volatile int recvCount;                 // count received bits
 
@@ -133,8 +132,12 @@ private:
     bool recvBusyFlag_;         // flag is active during the parsing of a message
     uint64_t recvBuffer_;       // buffer for incoming data
     int midBitFlag_;            // flag set after a mid cycle transition has occurred
+    volatile int recvErrorFlag_;// flag is set when a receive error is encountered. used to ignore the rest of the frame
     unsigned long recvTimeRef_; // [ms] timestamp of last observed ot level change
     unsigned long idleTimeRef_; // [ms] timestamp of the end of the last received frame
+
+    // report an receive error to the class interface
+    void setRecvError(ot_recv_error_t);
 
     // send a single machester encoded bit over the opentherm interface
     void sendMachesterBit(bool);
