@@ -21,7 +21,7 @@ public:
     float computeStep (float input);
 
     // change the controllers setpoint
-    void changeSetpoint (float setpoint) {setpoint_ = setpoint;}
+    void changeSetpoint (float setpoint);
 
     // change the controllers p, i and d conefficients
     void changeCoefficients (float kP, float kI, float kD);

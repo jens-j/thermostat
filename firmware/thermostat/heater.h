@@ -16,11 +16,6 @@ public:
 
 private:
 
-    // receive the reply to a read or write request. return succes/failure
-    // timeout - waiting time in ms
-    // debug   - debug print on/off
-    bool recvReply(int timeout, bool print);
-
     // opentherm master inteface object pointer
     OpenTherm *ot_;
 };

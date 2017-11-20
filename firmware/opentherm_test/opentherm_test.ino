@@ -1,33 +1,11 @@
-#include <stdint.h>
+#include "common.h"
 #include "opentherm.h"
 
-
-// IO pins
-#define otOut 12
-#define otIn 3
-#define otInterruptNr 1 // interrupt number for otIn pin
-
-// variables
-char cBuffer[80];
-OpenTherm ot = OpenTherm(otIn, otOut, otInterruptNr);
-
-// opentherm message receive timeout
-ISR(WDT_vect) {
-    ot.wdtIsr();
-}
-
-void extIntDispatch() {
-    ot.recvIsr();
-}
-
+OpenTherm ot = OpenTherm(OT_INPUT_PIN, OT_OUTPUT_PIN);
 
 void setup() {
 
     Serial.begin(115200);
-
-    // set up external interrupt
-    attachInterrupt(digitalPinToInterrupt(otIn), extIntDispatch, CHANGE);
-
     delay(1000);
 }
 
@@ -35,37 +13,24 @@ void setup() {
 void loop() {
 
     int i;
-    int code;
-    unsigned long t;
-    int ids[] = {ID_DHW_TEMP, ID_DHW_FLOW_RATE, ID_SLAVE_VERSION, ID_RETURN_WATER_TEMP,
-    			 ID_BOILER_WATER_TEMP, ID_FAULT, ID_SLAVE_CONFIG, ID_STATUS};
+    ot_recv_error_t recvError;
+    uint64_t frameBuf;
+    int ids[] = {ID_DHW_TEMP, ID_DHW_FLOW_RATE, ID_BOILER_WATER_TEMP, ID_DHW_SETPOINT_BOUNDS, ID_DHW_SETPOINT,
+    			 ID_SLAVE_CONFIG, ID_REMOTE_PARAMETER, ID_STATUS, ID_DHW_BURNER_STARTS, ID_BURNER_OP_HOURS};
 
     for (i = 0; i < sizeof(ids) / 2; i++) {
 
 	    ot.sendFrame(READ_DATA, ids[i], 0);
+        recvError = ot.recvReply(&frameBuf);
 
-	    t = millis();
+        if (recvError == OT_RECV_ERR_NONE) {
+            ot.printFrame(frameBuf);
+        } else {
+            Serial.print("receive error: ");
+            Serial.println(OT_RECV_ERROR_T_STR[recvError]);
+        }
 
-	    while (millis() - t < 2000) {
-
-	        // print errors
-	        if (ot.recvErrorCode != ERR_NONE) {
-	            code = ot.recvErrorCode;
-	            ot.recvErrorCode = ERR_NONE;
-	            ot.recvErrorFlag = false;
-	            sprintf(cBuffer, "\nerror: %d", code);
-	            Serial.println(cBuffer);
-	        }
-
-	        // print messages
-	        if (ot.recvFlag == true) {
-	            ot.recvFlag = false;
-	            Serial.println("\nreceived:");
-	            OpenTherm::printMsg(ot.recvData);
-	            delay(100);
-	            break;
-	        }
-	    }
+        delay(100);
 	}
 
 	while (true) {}
