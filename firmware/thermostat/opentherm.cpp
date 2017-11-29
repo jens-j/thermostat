@@ -69,6 +69,9 @@ void OpenTherm::sendFrame(uint32_t msgType, uint32_t dataId, uint32_t dataValue)
     sprintf(printBuffer, "\nsend: 0x%08lx", msg);
     Serial.println(printBuffer);
 
+    //noInterrupts();
+    detachInterrupt(PIN_TO_INT(inputPin_));
+
     // Send start bit
     sendMachesterBit_(true);
 
@@ -80,11 +83,19 @@ void OpenTherm::sendFrame(uint32_t msgType, uint32_t dataId, uint32_t dataValue)
 
     // Send stop bit
     sendMachesterBit_(true);
+
+    //delayMicroseconds(20);
+    // digitalWrite(7, HIGH);
+    // digitalWrite(7, LOW);
+    EIFR = (1 << PIN_TO_INT(inputPin_));
+    attachInterrupt(PIN_TO_INT(inputPin_), EXT_ISR, CHANGE);
+
+
 }
 
 // receive the reply to a read or write request. return the receive error code.
 // either the receive or receive error flag should go up before the maximal resonse time elapses.
-ot_recv_error_t OpenTherm::recvReply(uint64_t *frameBuf)
+ot_recv_error_t OpenTherm::recvReply(uint64_t *frameBuf, int *n)
 {
     ot_recv_error_t errorCode;
     unsigned long t0 = millis();
@@ -95,6 +106,7 @@ ot_recv_error_t OpenTherm::recvReply(uint64_t *frameBuf)
         if (recvErrorCode_ != OT_RECV_ERR_NONE) {
             errorCode = recvErrorCode_;
             recvErrorCode_ = OT_RECV_ERR_NONE;
+            *n = recvCount_;
             recvErrorFlag_ = false;
             *frameBuf = 0ULL;
             return errorCode;
@@ -102,6 +114,7 @@ ot_recv_error_t OpenTherm::recvReply(uint64_t *frameBuf)
 
         // print messages
         if (recvFlag_ == true) {
+        	*n = recvCount_;
             *frameBuf = recvData_;
             recvFlag_ = false;
             return OT_RECV_ERR_NONE;
@@ -129,9 +142,13 @@ void OpenTherm::wdtIsr() {
 void OpenTherm::otIsr() {
 
     uint32_t t = micros();
-    int inputState = digitalRead(inputPin_);
-
     wdt_reset();
+
+    delayMicroseconds(5);
+    pinMode(7, OUTPUT);
+    digitalWrite(7, HIGH);
+    digitalWrite(7, LOW);
+    int inputState = digitalRead(inputPin_);
 
     // If an error happened, discard all data and wait for a timeout
     if (recvErrorFlag_ == true) {
@@ -140,15 +157,22 @@ void OpenTherm::otIsr() {
 
     // Discard the first transition of the start bit and initialize variables
     if (recvBusyFlag_ == false) {
-        // the first edge should always be positive
+        // the first edge should always be rising
         if (!inputState) {
+        	digitalWrite(7, HIGH);
+    		digitalWrite(7, LOW);
             setRecvError_(OT_RECV_ERR_FIRST_EDGE);
             return;
         }
-        recvBusyFlag_ = true;
+        recvFlag_ = false;
+        recvData_ = 0ULL;
+        recvErrorCode_ = OT_RECV_ERR_NONE;
         recvCount_ = 0;
+
+        recvBusyFlag_ = true;  
         recvBuffer_ = 0x00000000;
         midBitFlag_ = false;
+        
         WDTCSR |= (1<<WDIE); // Enable wdt interrupt
     }
     // First clock transition of the start bit
@@ -264,8 +288,8 @@ void OpenTherm::printFrame(uint64_t frameBuf) {
         Serial.println(cBuffer);
     }
 
-    Serial.print("msg type:   ");
-    Serial.println(OT_MSG_T_STR[msg.msgType]);
+    // Serial.print("msg type:   ");
+    // Serial.println(OT_MSG_T_STR[msg.msgType]);
     Serial.print("data id:    ");
     Serial.println(msg.dataId);
     Serial.print("data value: ");

@@ -84,16 +84,16 @@ const String OT_MSG_T_STR[8] = {"READ_DATA",        // master to slave
                                 "UNKNOWN_DATA_ID"}; // |
 
 // opentherm receive error strings
-const String OT_RECV_ERROR_T_STR[8] = {"ERR_NONE",
+const String OT_RECV_ERROR_T_STR[6] = {"ERR_NONE",
                                        "ERR_FIRST_EDGE",
                                        "ERR_EDGE_EARLY",
                                        "ERR_EDGE_LATE",
+                                       "OT_RECV_ERR_INCOMPLETE",
                                        "ERR_TIMEOUT"};
 
 // Opentherm interface class
 // this class can send frames by bitbanging the ot interface.
-// And external interrupt is used to receive replies.
-//
+// An external interrupt is used to receive replies.
 class OpenTherm {
 
 public:
@@ -106,7 +106,7 @@ public:
     void sendFrame (uint32_t msgType, uint32_t dataId, uint32_t dataValue);
 
     // receive the reply to a read or write request. return the recv error code.
-    ot_recv_error_t recvReply(uint64_t *frameBuf);
+    ot_recv_error_t recvReply(uint64_t *frameBuf, int *n);
 
     // handle communication timeouts
     void wdtIsr ();
