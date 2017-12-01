@@ -59,7 +59,7 @@ enum ot_msg_t {READ_DATA,
 // opentherm 32 bit message structure
 typedef struct message_s {
     bool        parity;
-    ot_msg_t    msgType;
+    uint8_t     msgType;
     uint8_t     dataId;
     uint16_t    dataValue;
 } message_t;

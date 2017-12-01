@@ -32,31 +32,13 @@ void loop() {
         ot.sendFrame(READ_DATA, ids[i], 0);
         recvError = ot.recvReply(&frameBuf, &recvCount);
 
-        if (recvError == OT_RECV_ERR_NONE) {
-            ot.printFrame(frameBuf);
-        } else {
+        if (recvError != OT_RECV_ERR_NONE) {
             Serial.print("receive error: ");
             Serial.println(OT_RECV_ERROR_T_STR[recvError]);
         }
 
-        sprintf(cBuf, "received: 0x%llx (%d, %d)", 
-            frameBuf, recvCount, recvError);
-        Serial.println(cBuf);
+        ot.printFrame(frameBuf);
 
-        // Serial.print("received: 0x");
-        // Serial.print((int) frameBuf);
-        // Serial.print(", ");
-        // Serial.print(recvCount);
-        // Serial.print(", ");
-        // Serial.println(recvError);
-
-        delay(800);
-    }
-
-    while (true) {
-        ot.sendFrame(READ_DATA, ID_STATUS, 0);
-        ot.recvReply(&frameBuf, &recvCount);
-        // ot.printFrame(frameBuf);
-        delay(800);
+        delay(1000);
     }
 }

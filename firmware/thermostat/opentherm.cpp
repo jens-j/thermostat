@@ -44,6 +44,7 @@ OpenTherm::OpenTherm(int inPin, int outPin) {
     otInstance = this;
 
     // set up external interrupt
+    EIFR = (1 << PIN_TO_INT(inputPin_));
     attachInterrupt(PIN_TO_INT(inputPin_), EXT_ISR, CHANGE);
 
     // set up WDT interrupt
@@ -54,7 +55,7 @@ OpenTherm::OpenTherm(int inPin, int outPin) {
 
 void OpenTherm::sendFrame(uint32_t msgType, uint32_t dataId, uint32_t dataValue) {
 
-    char printBuffer[80];
+    char printBuffer[100];
     uint32_t mask = 0x80000000;
 
     // messages can not be sent less than 100 ms after the last reply was received
@@ -66,7 +67,7 @@ void OpenTherm::sendFrame(uint32_t msgType, uint32_t dataId, uint32_t dataValue)
     msg |= (uint32_t) msgType << 28;
     msg |= parity32(msg);
 
-    sprintf(printBuffer, "\nsend: 0x%08lx", msg);
+    sprintf(printBuffer, "\nsend: 0x%08lx (id = %d)", msg, dataId);
     Serial.println(printBuffer);
 
     //noInterrupts();
@@ -84,9 +85,6 @@ void OpenTherm::sendFrame(uint32_t msgType, uint32_t dataId, uint32_t dataValue)
     // Send stop bit
     sendMachesterBit_(true);
 
-    //delayMicroseconds(20);
-    // digitalWrite(7, HIGH);
-    // digitalWrite(7, LOW);
     EIFR = (1 << PIN_TO_INT(inputPin_));
     attachInterrupt(PIN_TO_INT(inputPin_), EXT_ISR, CHANGE);
 
@@ -242,21 +240,20 @@ void OpenTherm::setRecvError_ (ot_recv_error_t errorCode)
 uint8_t OpenTherm::parseFrame (uint64_t frameBuf, message_t *msg)
 {
     uint8_t error = OT_PARSE_ERR_NONE;
-
     uint32_t msgBuf = (uint32_t) (frameBuf >> 1);
     *msg = parseMessage(msgBuf);
 
-    if ((frameBuf & 1) != 0ULL) {
+    if (!(frameBuf & 0x0000000000000001)) {
         error |= OT_PARSE_ERR_START;
     }
-    if ((frameBuf & (1 << 33)) != 0ULL) {
+    if (!(frameBuf & 0x0000000200000000)) {
         error |= OT_PARSE_ERR_STOP;
     }
-    if (msgBuf & (1 << 31) != parity32(msgBuf)) {
-        error |= OT_PARSE_ERR_PARITY;
-    }
-    if (frameBuf & 0xfffffffc00000000ULL != 0ULL) {
+    if (frameBuf &   0xfffffffc00000000) {
         error |= OT_PARSE_ERR_SIZE;
+    }
+    if (msgBuf & 0x80000000 != parity32(msgBuf)) {
+        error |= OT_PARSE_ERR_PARITY;
     }
 
     return error;
@@ -266,11 +263,13 @@ uint8_t OpenTherm::parseFrame (uint64_t frameBuf, message_t *msg)
 message_t OpenTherm::parseMessage (uint32_t buf)
 {
     message_t msg = {
-        (bool)      (buf & (1 << 31)),   // parity bit
-        (ot_msg_t) ((buf >> 28) & 0x7),  // msg type
-        (uint8_t)  ((buf >> 16) & 0xff), // data id
-        (uint16_t)   buf                // data value
+        (bool)      (buf & 0x80000000UL),   	 // parity bit
+        (uint8_t)  ((buf & 0x70000000UL) >> 28), // msg type
+        (uint8_t)  ((buf & 0x00ff0000UL) >> 16), // data id
+        (uint16_t)  (buf & 0x0000ffffUL)         // data value
     };
+
+    return msg;
 }
 
 // pretty print an opentherm frame
@@ -282,14 +281,14 @@ void OpenTherm::printFrame(uint64_t frameBuf) {
     sprintf(cBuffer, "raw msg: 0x%08lx%08lx", (uint32_t) (frameBuf >> 32), (uint32_t) frameBuf);
     Serial.println(cBuffer);
 
-    bool errorCode = parseFrame(frameBuf, &msg);
+    uint8_t errorCode = parseFrame(frameBuf, &msg);
     if (errorCode != OT_PARSE_ERR_NONE) {
         sprintf(cBuffer, "incorrect message format (0x%x)", errorCode);
         Serial.println(cBuffer);
     }
 
-    // Serial.print("msg type:   ");
-    // Serial.println(OT_MSG_T_STR[msg.msgType]);
+    Serial.print("msg type: ");
+    Serial.println(OT_MSG_T_STR[msg.msgType]);
     Serial.print("data id:    ");
     Serial.println(msg.dataId);
     Serial.print("data value: ");
