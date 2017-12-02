@@ -43,7 +43,14 @@ OpenTherm::OpenTherm(int inPin, int outPin) {
     // this allows the global interupt dispatch function to call this instances interrupt handler
     otInstance = this;
 
+    // pinMode(7, OUTPUT);
+    // digitalWrite(7, HIGH);
+    // digitalWrite(7, LOW);
+    // digitalWrite(7, HIGH);
+    // digitalWrite(7, LOW);
+
     // set up external interrupt
+    delayMicroseconds(20); // wait for the ot interface to settle
     EIFR = (1 << PIN_TO_INT(inputPin_));
     attachInterrupt(PIN_TO_INT(inputPin_), EXT_ISR, CHANGE);
 
@@ -98,6 +105,8 @@ ot_recv_error_t OpenTherm::recvReply(uint64_t *frameBuf, int *n)
     ot_recv_error_t errorCode;
     unsigned long t0 = millis();
 
+    *frameBuf = 0ULL;
+
     while (millis() - t0 < T_SLAVE_RESP) {
 
         // print errors
@@ -106,13 +115,12 @@ ot_recv_error_t OpenTherm::recvReply(uint64_t *frameBuf, int *n)
             recvErrorCode_ = OT_RECV_ERR_NONE;
             *n = recvCount_;
             recvErrorFlag_ = false;
-            *frameBuf = 0ULL;
             return errorCode;
         }
 
         // print messages
         if (recvFlag_ == true) {
-        	*n = recvCount_;
+            *n = recvCount_;
             *frameBuf = recvData_;
             recvFlag_ = false;
             return OT_RECV_ERR_NONE;
@@ -143,9 +151,9 @@ void OpenTherm::otIsr() {
     wdt_reset();
 
     delayMicroseconds(5);
-    pinMode(7, OUTPUT);
-    digitalWrite(7, HIGH);
-    digitalWrite(7, LOW);
+    // pinMode(7, OUTPUT);
+    // digitalWrite(7, HIGH);
+    // digitalWrite(7, LOW);
     int inputState = digitalRead(inputPin_);
 
     // If an error happened, discard all data and wait for a timeout
@@ -157,8 +165,9 @@ void OpenTherm::otIsr() {
     if (recvBusyFlag_ == false) {
         // the first edge should always be rising
         if (!inputState) {
-        	digitalWrite(7, HIGH);
-    		digitalWrite(7, LOW);
+            pinMode(7, OUTPUT);
+            digitalWrite(7, HIGH);
+            digitalWrite(7, LOW);
             setRecvError_(OT_RECV_ERR_FIRST_EDGE);
             return;
         }
@@ -263,7 +272,7 @@ uint8_t OpenTherm::parseFrame (uint64_t frameBuf, message_t *msg)
 message_t OpenTherm::parseMessage (uint32_t buf)
 {
     message_t msg = {
-        (bool)      (buf & 0x80000000UL),   	 // parity bit
+        (bool)      (buf & 0x80000000UL),        // parity bit
         (uint8_t)  ((buf & 0x70000000UL) >> 28), // msg type
         (uint8_t)  ((buf & 0x00ff0000UL) >> 16), // data id
         (uint16_t)  (buf & 0x0000ffffUL)         // data value
@@ -275,7 +284,7 @@ message_t OpenTherm::parseMessage (uint32_t buf)
 // pretty print an opentherm frame
 void OpenTherm::printFrame(uint64_t frameBuf) {
 
-    char cBuffer[80];
+    char cBuffer[100];
     message_t msg;
 
     sprintf(cBuffer, "raw msg: 0x%08lx%08lx", (uint32_t) (frameBuf >> 32), (uint32_t) frameBuf);
@@ -287,12 +296,13 @@ void OpenTherm::printFrame(uint64_t frameBuf) {
         Serial.println(cBuffer);
     }
 
+
     Serial.print("msg type: ");
     Serial.println(OT_MSG_T_STR[msg.msgType]);
     Serial.print("data id:    ");
     Serial.println(msg.dataId);
-    Serial.print("data value: ");
-    Serial.println(msg.dataValue);
+    sprintf(cBuffer, "data value: %d (0x%x)", msg.dataValue, msg.dataValue);
+    Serial.print(cBuffer);
 }
 
 

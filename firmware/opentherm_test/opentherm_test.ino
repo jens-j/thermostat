@@ -3,14 +3,8 @@
 
 OpenTherm ot = OpenTherm(OT_INPUT_PIN, OT_OUTPUT_PIN);
 
-// void EXT_ISR () {
-//     ot.otIsr();
-// }
-
 
 void setup() {
-
-    // attachInterrupt(PIN_TO_INT(OT_INPUT_PIN), EXT_ISR, CHANGE);
 
     Serial.begin(115200);
     delay(2000);
