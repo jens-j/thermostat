@@ -42,6 +42,9 @@ private:
     float prevOutput_;  // last pid output
     float outputMin_;   // minimal value for the pid output
     float outputMax_;   // maximal value for the pid output
+
+    unsigned long timestamp_; // timestamp of last update in ms
 };
+
 
 #endif PID_H

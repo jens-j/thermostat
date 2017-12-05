@@ -20,44 +20,46 @@ Pid::Pid (float kP,
     outputMin_ = outputMin;
     outputMax_ = outputMax;
 
+    timestamp_ = millis();
     iTerm_ = 0.0;
     prevOutput_ = 0;
 }
 
 float Pid::computeStep (float input)
 {
+    float prevTimestamp = timestamp_;
+    float dt = (millis() - timestamp_) * 1E3;
     float error = setpoint_ - input;
+    float dInput = (input - prevInput_) / dt;
 
-    iTerm_ += kI_ * error;
+    iTerm_ += kI_ * error * dt;
     iTerm_ = constrain(iTerm_, outputMin_, outputMax_);
 
-    // float input = kP_ * error + iTerm_ - kD_ * dInput    // p on e & d on m
-    float output = -kP_ * (input - initInput_) + iTerm_ - kD_ * (input - prevInput_); // p on m & d on m
-    output = constrain(output, outputMin_, outputMax_);
+    // p on e & d on m
+    float output = kP_ * error + iTerm_ - kD_ * dInput;  
 
-    Serial.println(input);
-    Serial.println(initInput_);
+    // p on m & d on m
+    // float output = -kP_ * (input - initInput_) + iTerm_ - kD_ * dInput; // p on m & d on m
+    
+    output = constrain(output, outputMin_, outputMax_);
 
     prevInput_ = input;
     prevOutput_ = output;
+    timestamp_ = prevTimestamp;
 
     return output;
 }
 
-void Pid::changeSetpoint (float setpoint);
+void Pid::changeSetpoint (float setpoint)
 {
-    noInterrupts();
     setpoint_ = setpoint;
-    interrupts();
 }
 
 void Pid::changeCoefficients (float kP, float kI, float kD)
 {
-    noInterrupts();
     kP_ = kP;
-    kI_ = kI * PID_P; // these expressions are taken out of computeStep()
-    kD_ = kD / PID_P; // this avoids performing them every loop iteration
-    interrupts();
+    kI_ = kI;
+    kD_ = kD; 
 }
 
 pid_state_log_t Pid::getState ()
@@ -68,8 +70,8 @@ pid_state_log_t Pid::getState ()
         setpoint_,
         iTerm_,
         kP_,
-        kI_ / PID_P,
-        kD_ * PID_P
+        kI_,
+        kD_
     };
 
     return state;

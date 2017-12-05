@@ -1,14 +1,23 @@
-#import "Arduino.h"
-#import "heater.h"
-#import "opentherm.h"
+#include <math.h>
+#include "heater.h"
 
 Heater::Heater (int openthermIn, int openthermOut)
 {
-    ot_ = new OpenTherm(openthermIn, openthermOut);
+    ot = new OpenTherm(openthermIn, openthermOut);
 }
 
-bool Heater::setTemperature (float temperature)
+bool Heater::setTemperature (float setpoint)
 {
-    ot_->sendFrame(WRITE_DATA, ID_CONTROL_SETPOINT, (uint32_t) temperature);
-    return recvReply(T_SLAVE_RESP, true);
+    return ot->setRegister(ID_CONTROL_SETPOINT, (uint16_t) round(setpoint));
+}
+
+bool Heater::getStatus (uint8_t *status) 
+{   
+    uint16_t dataValue;
+    bool success;
+
+    success = ot->getRegister(ID_STATUS, &dataValue);
+    *status = (uint8_t) dataValue;
+
+    return success;
 }

@@ -3,77 +3,88 @@
 #include "common.h"
 #include "esp.h"
 #include "heater.h"
+#include "opentherm.h"
 #include "thermometer.h"
 #include "pid.h"
 
 // interface objects
-Esp esp = Esp(ESP_RX_PIN, ESP_TX_PIN);
-Heater heater = Heater(OT_INPUT_PIN, OT_OUTPUT_PIN);
-Thermometer thermometer = Thermometer(THERMOMETER_PIN, N_ADC_AVG);
+Esp *esp = new Esp(ESP_RX_PIN, ESP_TX_PIN);
+Heater *heater = new Heater(OT_INPUT_PIN, OT_OUTPUT_PIN);
+Thermometer *thermometer = new Thermometer(THERMOMETER_PIN, N_ADC_AVG);
 Pid *pid;
 
-// main loop variables
-float msg_tick_counter = 0;
-float pid_tick_counter = 0;
-pid_state_log_t pidState;
+// isr tick counters 
+int uioCount = 0;
+int pidCount = 0;
 
+// isr <-> main loop communication variables
+volatile bool uioFlag = false;
+volatile bool keepaliveFlag = false;
+volatile bool pidFlag = false;
+
+// increase counters and check if task should be scheduled
 void TIMER1_ISR ()
 {
-
-    // read buttons and update lcd
-
-    msg_tick_counter += P_USER_INPUT;
-    pid_tick_counter += P_USER_INPUT;
-
-    if (msg_tick_counter >= P_MSG) {
-        msg_tick_counter -= P_MSG;
-
-        // ot keepalive
-
-        // handle commands
+    if (++uioCount == P_UIO) {
+        uioCount = 0;
+        uioFlag = true;
     }
-
-    if (pid_tick_counter >= P_PID) {
-        pid_tick_counter -= P_PID;
-
-        // pid update
-        bool success = heater.setTemperature(pid->computeStep(thermometer.readTemperature()));
-        if (success) {
-            pidState = pid->getState();
-            esp.logPidState(pidState);
-            Serial.print("input, output = ");
-            Serial.print(pidState.input);
-            Serial.print(", ");
-            Serial.println(pidState.output);
-        } else {
-            Serial.println("Could not set heater temperature");
-        }
+    if (heater->ot->checkKeepAlive() == P_KEEPALIVE) {
+        heater->ot->resetKeepAlive();
+        keepaliveFlag = true;
+    }
+    if (++pidCount == P_PID) {
+        pidCount = 0;
+        pidFlag = true;
     }
 }
 
 void setup ()
 {
     Serial.begin(115200);
-
     Serial.println("initializing");
 
-    float temp = thermometer.readTemperature();
-    Serial.println(temp);
     pid = new Pid(1.0,   // kP
                   0.5,   // kI
                   0.5,   // kD
                   100.0, // Imax
-                  temp,  // initial input
-                  30.0,  // setpoint
+                  thermometer->readTemperature(),  // initial input
+                  20.0,  // setpoint
                   0.0,   // minimal output
                   100.0);// maximal output
 
     // set up the timer1 interrupt
-    Timer1.initialize(USER_INPUT_P * 1E6);
+    Timer1.initialize(P_TICK * 1E3);
     Timer1.attachInterrupt(TIMER1_ISR);
 }
 
 void loop ()
 {
+    float roomTemperature;
+    float boilerTemperature;
+    pid_state_log_t pidState;
+    uint8_t heaterStatus;
 
+    if (uioFlag == true) {
+        uioFlag = false;
+
+        // sample buttons
+
+    } else if (keepaliveFlag == true) {
+        keepaliveFlag = false;
+
+        heater->getStatus(&heaterStatus);
+
+    } else if (pidFlag == true) {
+        pidFlag = false;
+
+        // perform a pid update 
+        roomTemperature = thermometer->readTemperature();
+        boilerTemperature = pid->computeStep(roomTemperature);
+        heater->setTemperature(boilerTemperature);
+
+        // log the state to the server
+        pidState = pid->getState();
+        esp->logPidState(pidState);
+    }
 }

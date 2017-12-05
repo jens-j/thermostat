@@ -23,16 +23,17 @@ OpenTherm::OpenTherm(int inPin, int outPin) {
     outputPin_ = outPin;
 
     // initialize variables
-    recvFlag_ = false;
-    recvData_ = 0ULL;
-    recvErrorCode_ = OT_RECV_ERR_NONE;
-    recvCount_ = 0;
-    recvBusyFlag_ = false;
-    recvBuffer_ = 0ULL;
-    midBitFlag_ = false;
-    recvErrorFlag_ = false;
-    recvTimeRef_ = 0UL;
-    idleTimeRef_ = 0UL;
+    recvFlag_           = false;
+    recvData_           = 0ULL;
+    recvErrorCode_      = OT_RECV_ERR_NONE;
+    recvCount_          = 0;
+    recvBusyFlag_       = false;
+    recvBuffer_         = 0ULL;
+    midBitFlag_         = false;
+    recvErrorFlag_      = false;
+    recvTimeRef_        = 0UL;
+    idleTimeRef_        = 0UL;
+    keepAliveCounter_   = 0;
 
     // set IO direction
     pinMode(inputPin_, INPUT);
@@ -52,7 +53,53 @@ OpenTherm::OpenTherm(int inPin, int outPin) {
     WDTCSR = (1 << WDP0); // 64 ms
 }
 
-void OpenTherm::sendFrame(uint32_t msgType, uint32_t dataId, uint32_t dataValue) {
+bool OpenTherm::setRegister(uint8_t dataId, uint16_t dataValue) 
+{
+    uint64_t frameBuf;
+    message_t message;
+    ot_recv_error_t recvError;
+    uint8_t parseError;
+
+    sendFrame(WRITE_DATA, dataId, dataValue);
+    recvError = recvReply(&frameBuf);
+    parseError = parseFrame(frameBuf, &message);
+
+    if (recvError != OT_RECV_ERR_NONE) {
+        return false;
+    } else if (parseError != 0) {
+        return false;
+    } else if (message.msgType != WRITE_ACK) {
+        return false;
+    }  else {
+        return true;
+    }
+}
+
+bool OpenTherm::getRegister(uint8_t dataId, uint16_t *dataValue) 
+{
+    uint64_t frameBuf;
+    message_t message;
+    ot_recv_error_t recvError;
+    uint8_t parseError;
+
+    sendFrame(READ_DATA, dataId, 0);
+    recvError = recvReply(&frameBuf);
+    parseError = parseFrame(frameBuf, &message);
+    *dataValue = message.dataValue;
+
+    if (recvError != OT_RECV_ERR_NONE) {
+        return false;
+    } else if (parseError != 0) {
+        return false;
+    } else if (message.msgType != READ_ACK) {
+        return false;
+    }  else {
+        return true;
+    }
+}
+
+void OpenTherm::sendFrame(int msgType, uint8_t dataId, uint16_t dataValue) 
+{
 
     char printBuffer[80];
     uint32_t mask = 0x80000000;
@@ -80,6 +127,8 @@ void OpenTherm::sendFrame(uint32_t msgType, uint32_t dataId, uint32_t dataValue)
 
     // Send stop bit
     sendMachesterBit_(true);
+
+    resetKeepAlive();
 }
 
 // receive the reply to a read or write request. return the receive error code.
@@ -288,4 +337,14 @@ uint32_t OpenTherm::parity32(uint32_t msg) {
     }
 
    return parity << 31;
+}
+
+int OpenTherm::checkKeepAlive () 
+{
+    return ++keepAliveCounter_;
+} 
+
+void OpenTherm::resetKeepAlive ()
+{   
+    keepAliveCounter_ = 0;
 }
