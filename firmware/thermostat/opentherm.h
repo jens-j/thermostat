@@ -69,7 +69,7 @@ enum ot_recv_error_t {
 // opentherm 32 bit message structure
 typedef struct message_s {
     bool        parity;
-    ot_msg_t    msgType;
+    uint8_t     msgType;
     uint8_t     dataId;
     uint16_t    dataValue;
 } message_t;
@@ -116,7 +116,7 @@ public:
     void sendFrame (int msgType, uint8_t dataId, uint16_t dataValue=0);
 
     // receive the reply to a read or write request. return the recv error code.
-    ot_recv_error_t recvReply(uint64_t *frameBuf);
+    ot_recv_error_t recvReply(uint64_t *frameBuf, int *n);
 
     // handle communication timeouts
     void wdtIsr ();
