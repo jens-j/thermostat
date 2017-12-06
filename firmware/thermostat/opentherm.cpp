@@ -44,12 +44,6 @@ OpenTherm::OpenTherm(int inPin, int outPin) {
     // this allows the global interupt dispatch function to call this instances interrupt handler
     otInstance = this;
 
-    // pinMode(7, OUTPUT);
-    // digitalWrite(7, HIGH);
-    // digitalWrite(7, LOW);
-    // digitalWrite(7, HIGH);
-    // digitalWrite(7, LOW);
-
     // set up external interrupt
     delayMicroseconds(20); // wait for the ot interface to settle
     EIFR = (1 << PIN_TO_INT(inputPin_));
@@ -126,7 +120,8 @@ void OpenTherm::sendFrame(int msgType, uint8_t dataId, uint16_t dataValue)
     sprintf(printBuffer, "\nsend: 0x%08lx (id = %d)", msg, dataId);
     Serial.println(printBuffer);
 
-    //noInterrupts();
+    // diable interrupts to avoid false positive recv interrupts (crosstalk)
+    // and to avoid other interrupts to mess up the timing of the frame
     detachInterrupt(PIN_TO_INT(inputPin_));
 
     // Send start bit
@@ -200,10 +195,7 @@ void OpenTherm::otIsr() {
     uint32_t t = micros();
     wdt_reset();
 
-    delayMicroseconds(5);
-    // pinMode(7, OUTPUT);
-    // digitalWrite(7, HIGH);
-    // digitalWrite(7, LOW);
+    delayMicroseconds(5); // this is probably not necessary
     int inputState = digitalRead(inputPin_);
 
     // If an error happened, discard all data and wait for a timeout
@@ -257,7 +249,7 @@ void OpenTherm::otIsr() {
             // shift received bit into the buffer
             recvBuffer_ = inputState ? recvBuffer_ << 1 : (recvBuffer_ << 1) | 1ULL;
 
-            // end of frame
+            // check for end of frame
             if (++recvCount_ == 34) {
                 WDTCSR &= ~(1<<WDIE); // Disable wdt interrupt
                 recvData_ = recvBuffer_;

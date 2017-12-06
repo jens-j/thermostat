@@ -25,15 +25,15 @@ volatile bool pidFlag = false;
 // increase counters and check if task should be scheduled
 void TIMER1_ISR ()
 {
-    if (++uioCount == P_UIO) {
+    if (++uioCount >= P_UIO) {
         uioCount = 0;
         uioFlag = true;
     }
-    if (heater->ot->checkKeepAlive() == P_KEEPALIVE) {
+    if (heater->ot->checkKeepAlive() >= P_KEEPALIVE) {
         heater->ot->resetKeepAlive();
         keepaliveFlag = true;
     }
-    if (++pidCount == P_PID) {
+    if (++pidCount >= P_PID) {
         pidCount = 0;
         pidFlag = true;
     }
