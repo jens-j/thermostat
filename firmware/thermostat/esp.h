@@ -13,9 +13,11 @@ public:
     void logPidState (pid_state_log_t update);
     void printReply ();
 
+    SoftwareSerial *esp_; // serial interface to the ESP-1 module
+
 private:
 
-    SoftwareSerial *esp_; // serial interface to the ESP 01 module
+    
 
 };
 

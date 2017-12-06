@@ -117,8 +117,8 @@ void OpenTherm::sendFrame(int msgType, uint8_t dataId, uint16_t dataValue)
     msg |= (uint32_t) msgType << 28;
     msg |= parity32(msg);
 
-    sprintf(printBuffer, "\nsend: 0x%08lx (id = %d)", msg, dataId);
-    Serial.println(printBuffer);
+    // sprintf(printBuffer, "\nsend: 0x%08lx (id = %d)", msg, dataId);
+    // Serial.println(printBuffer);
 
     // diable interrupts to avoid false positive recv interrupts (crosstalk)
     // and to avoid other interrupts to mess up the timing of the frame

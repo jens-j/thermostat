@@ -41,15 +41,17 @@ void TIMER1_ISR ()
 
 void setup ()
 {
+    delay(2000);
+
     Serial.begin(115200);
     Serial.println("initializing");
 
-    pid = new Pid(1.0,   // kP
-                  0.5,   // kI
-                  0.5,   // kD
+    pid = new Pid(20.0,  // kP
+                  0.1,   // kI
+                  0.0,   // kD
                   100.0, // Imax
                   thermometer->readTemperature(),  // initial input
-                  20.0,  // setpoint
+                  21.0,  // setpoint
                   0.0,   // minimal output
                   100.0);// maximal output
 
@@ -60,6 +62,8 @@ void setup ()
 
 void loop ()
 {
+    char cBuf[80];
+    bool success;
     float roomTemperature;
     float boilerTemperature;
     pid_state_log_t pidState;
@@ -70,21 +74,41 @@ void loop ()
 
         // sample buttons
 
-    } else if (keepaliveFlag == true) {
-        keepaliveFlag = false;
-
-        heater->getStatus(&heaterStatus);
-
     } else if (pidFlag == true) {
         pidFlag = false;
 
         // perform a pid update 
         roomTemperature = thermometer->readTemperature();
+
+        Serial.print("room: ");
+        Serial.print(roomTemperature);
+        Serial.println(" C");
+
         boilerTemperature = pid->computeStep(roomTemperature);
-        heater->setTemperature(boilerTemperature);
+
+        Serial.print("heater: ");
+        Serial.print(boilerTemperature);
+        Serial.println(" C");
+
+        success = heater->setTemperature(boilerTemperature);
+        if (!success) {
+            Serial.println("write error");
+        }
 
         // log the state to the server
         pidState = pid->getState();
         esp->logPidState(pidState);
-    }
+
+    } else if (keepaliveFlag == true) {
+        keepaliveFlag = false;
+
+        success = heater->getStatus(&heaterStatus);
+        if (success) {
+            sprintf(cBuf, "status: 0x%x", heaterStatus);
+            Serial.println(cBuf);
+        } else {
+            Serial.println("read error");
+        }
+
+    } 
 }

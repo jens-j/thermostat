@@ -17,7 +17,7 @@
 #define N_ADC_AVG       50
 
 // server address
-#define SERVER_IP       "192.168.2.3"
+#define SERVER_IP       "192.168.2.2"
 #define CLIENT_IP       "192.168.2.4"
 #define SERVER_PORT     8888
 
