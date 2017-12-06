@@ -1,4 +1,5 @@
 #include "Arduino.h"
+#include "common.h"
 #include "thermometer.h"
 
 // Constructor
@@ -9,14 +10,13 @@ Thermometer::Thermometer(int pin) {
 }
 
 // Measure the temperature by taking the average of multiple samples
-double Thermometer::getTemperature() {
+float Thermometer::getTemperature() {
     int i;
     long sum = 0;
 
-    Serial.println("");
-    for (i = 0; i < N_SAMPLES; i++) {
+    for (i = 0; i < N_ADC_AVG; i++) {
         sum += analogRead(inputPin); 
     }
 
-    return ((double) sum / (double) N_SAMPLES / 1024.0 * 1.1 - 0.5) * 100.0;
+    return ((float) sum / (float) N_ADC_AVG / 1024.0 * 1.1) * 100.0;
 }

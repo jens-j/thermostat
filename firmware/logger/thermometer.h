@@ -1,4 +1,3 @@
-#define N_SAMPLES 100
 
 class Thermometer {
 
@@ -8,7 +7,7 @@ public:
     Thermometer(int);
 
     // Read the current temperature in degrees Celsius
-    double getTemperature();
+    float getTemperature();
 
 private:
 
