@@ -14,8 +14,9 @@ public:
     // set the heating system water temperature
     bool setTemperature (float temperature);
 
-    // read the slave status word
-    bool getStatus (uint8_t *status);
+    // set the master enable bits and read the slave status at the same time
+    // The master status is fixed and the slave status is returned in slaveStatus
+    bool getSetStatus (uint8_t *slaveStatus);
 
     // opentherm master interface object pointer
     OpenTherm *ot;

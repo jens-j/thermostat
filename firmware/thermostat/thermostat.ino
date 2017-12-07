@@ -102,7 +102,7 @@ void loop ()
     } else if (keepaliveFlag == true) {
         keepaliveFlag = false;
 
-        success = heater->getStatus(&heaterStatus);
+        success = heater->getSetStatus(&heaterStatus);
         if (success) {
             sprintf(cBuf, "status: 0x%x", heaterStatus);
             Serial.println(cBuf);

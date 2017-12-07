@@ -109,11 +109,12 @@ public:
     // write a register, return true if succesfull
     bool setRegister (uint8_t dataId, uint16_t dataValue);
 
-    // read a register, return true if succesfull. the data is returned in dataValue
-    bool getRegister (uint8_t dataId, uint16_t *dataValue);
+    // read a register, return true if succesful. The data is returned in readValue. 
+    // Writevalue can be used to specify the data field in the read request
+    bool getRegister (uint8_t dataId, uint16_t *readValue, uint16_t writeValue=0);
 
     // send a frame over the opentherm interface
-    void sendFrame (int msgType, uint8_t dataId, uint16_t dataValue=0);
+    void sendFrame (int msgType, uint8_t dataId, uint16_t dataValue);
 
     // receive the reply to a read or write request. return the recv error code.
     ot_recv_error_t recvReply(uint64_t *frameBuf, int *n);

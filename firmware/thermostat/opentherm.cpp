@@ -78,7 +78,7 @@ bool OpenTherm::setRegister(uint8_t dataId, uint16_t dataValue)
     }
 }
 
-bool OpenTherm::getRegister(uint8_t dataId, uint16_t *dataValue) 
+bool OpenTherm::getRegister(uint8_t dataId, uint16_t *readValue, uint16_t writeValue) 
 {
     uint64_t frameBuf;
     message_t message;
@@ -86,10 +86,10 @@ bool OpenTherm::getRegister(uint8_t dataId, uint16_t *dataValue)
     uint8_t parseError;
     int recvCount;
 
-    sendFrame(READ_DATA, dataId, 0);
+    sendFrame(READ_DATA, dataId, writeValue);
     recvError = recvReply(&frameBuf, &recvCount);
     parseError = parseFrame(frameBuf, &message);
-    *dataValue = message.dataValue;
+    *readValue = message.dataValue;
 
     if (recvError != OT_RECV_ERR_NONE) {
         return false;
