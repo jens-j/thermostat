@@ -51,7 +51,7 @@ void setup ()
                   0.0,   // kD
                   100.0, // Imax
                   thermometer->readTemperature(),  // initial input
-                  21.0,  // setpoint
+                  20.0,  // setpoint
                   0.0,   // minimal output
                   100.0);// maximal output
 

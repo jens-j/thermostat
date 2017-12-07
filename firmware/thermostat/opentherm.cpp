@@ -68,10 +68,16 @@ bool OpenTherm::setRegister(uint8_t dataId, uint16_t dataValue)
     parseError = parseFrame(frameBuf, &message);
 
     if (recvError != OT_RECV_ERR_NONE) {
+        Serial.println('a');
+        Serial.println(recvError);
         return false;
     } else if (parseError != 0) {
+        Serial.println('b');
+        Serial.println(parseError);
         return false;
     } else if (message.msgType != WRITE_ACK) {
+        Serial.println('c');
+        Serial.println(message.msgType);
         return false;
     }  else {
         return true;
@@ -92,10 +98,16 @@ bool OpenTherm::getRegister(uint8_t dataId, uint16_t *readValue, uint16_t writeV
     *readValue = message.dataValue;
 
     if (recvError != OT_RECV_ERR_NONE) {
+        Serial.println('a');
+        Serial.println(recvError);
         return false;
     } else if (parseError != 0) {
+        Serial.println('b');
+        Serial.println(parseError);
         return false;
     } else if (message.msgType != READ_ACK) {
+        Serial.println('c');
+        Serial.println(message.msgType);
         return false;
     }  else {
         return true;
@@ -290,9 +302,13 @@ void OpenTherm::setRecvError_ (ot_recv_error_t errorCode)
 // returns the bitwise or of all applicable error codes
 uint8_t OpenTherm::parseFrame (uint64_t frameBuf, message_t *msg)
 {
+    char cBuf[40];
     uint8_t error = OT_PARSE_ERR_NONE;
     uint32_t msgBuf = (uint32_t) (frameBuf >> 1);
     *msg = parseMessage(msgBuf);
+
+    // sprintf(cBuf, "0x%08lx 0x%08lx", msgBuf & 0x80000000, parity32(msgBuf));
+    // Serial.println(cBuf);
 
     if (!(frameBuf & 0x0000000000000001)) {
         error |= OT_PARSE_ERR_START;

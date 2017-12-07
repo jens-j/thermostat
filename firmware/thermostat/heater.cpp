@@ -3,17 +3,19 @@
 
 Heater::Heater (int openthermIn, int openthermOut)
 {
-    uint8_t status;
+    //uint8_t status;
 
     ot = new OpenTherm(openthermIn, openthermOut);
 
-    // set the master status (enable CH and DHW)
-    getSetStatus(&status);
+    // // set the master status (enable CH and DHW)
+    // getSetStatus(&status);
 }
 
 bool Heater::setTemperature (float setpoint)
 {
-    return ot->setRegister(ID_CONTROL_SETPOINT, (uint16_t) round(setpoint));
+	uint16_t dataValue = (uint16_t) (setpoint * 256); // the temperature is converted to a 8.8 fixed point
+
+    return ot->setRegister(ID_CONTROL_SETPOINT, dataValue);
 }
 
 bool Heater::getSetStatus (uint8_t *slaveStatus) 
