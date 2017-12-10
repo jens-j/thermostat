@@ -307,9 +307,6 @@ uint8_t OpenTherm::parseFrame (uint64_t frameBuf, message_t *msg)
     uint32_t msgBuf = (uint32_t) (frameBuf >> 1);
     *msg = parseMessage(msgBuf);
 
-    // sprintf(cBuf, "0x%08lx 0x%08lx", msgBuf & 0x80000000, parity32(msgBuf));
-    // Serial.println(cBuf);
-
     if (!(frameBuf & 0x0000000000000001)) {
         error |= OT_PARSE_ERR_START;
     }
@@ -319,7 +316,7 @@ uint8_t OpenTherm::parseFrame (uint64_t frameBuf, message_t *msg)
     if (frameBuf &   0xfffffffc00000000) {
         error |= OT_PARSE_ERR_SIZE;
     }
-    if (msgBuf & 0x80000000 != parity32(msgBuf)) {
+    if ((msgBuf & 0x80000000UL) != parity32(msgBuf)) {
         error |= OT_PARSE_ERR_PARITY;
     }
 
@@ -365,16 +362,14 @@ void OpenTherm::printFrame(uint64_t frameBuf) {
 
 
 // Calculate the even parity bit for a 32 bit vector
-// the parity bit is already shifted to the right location (bit 31)
+// the parity bit is already shifted to the right location (bit 31) in the result
 uint32_t OpenTherm::parity32(uint32_t msg) {
 
     int i;
     uint32_t parity = 0UL;
 
-    for (i = 0; i < 31; i++) { // skip the parity bit itself
-        if (msg & 1UL == 1UL) {
-            parity = parity ^ 1UL;
-        }
+    for (i = 0; i < 31; i++) { // skip the parity bit itself at postion 31
+        parity = parity ^ (msg & 1UL);
         msg = msg >> 1;
     }
 

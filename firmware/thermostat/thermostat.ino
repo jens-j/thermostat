@@ -55,6 +55,16 @@ void setup ()
                   0.0,   // minimal output
                   100.0);// maximal output
 
+    char cBuf[40];
+    bool success = false;
+    uint8_t heaterStatus;
+    while (!success) {
+        success = heater->getSetStatus(&heaterStatus);
+        sprintf(cBuf, "status: 0x%x", heaterStatus);
+        Serial.println(cBuf);
+        delay(1000);
+    }
+
     // set up the timer1 interrupt
     Timer1.initialize(P_TICK * 1E3);
     Timer1.attachInterrupt(TIMER1_ISR);
@@ -69,6 +79,28 @@ void loop ()
     pid_state_log_t pidState;
     uint8_t heaterStatus;
 
+    // // perform a pid update 
+    // roomTemperature = thermometer->readTemperature();
+
+    // Serial.print("room: ");
+    // Serial.print(roomTemperature);
+    // Serial.println(" C");
+
+    // boilerTemperature = pid->computeStep(roomTemperature);
+
+    // Serial.print("heater: ");
+    // Serial.print(boilerTemperature);
+    // Serial.println(" C");
+
+    // delay(2000);
+
+    // success = heater->setTemperature(boilerTemperature);
+    // if (!success) {
+    //     Serial.println("write error");
+    // }
+
+    // delay(2000);
+
     if (uioFlag == true) {
         uioFlag = false;
 
@@ -80,20 +112,20 @@ void loop ()
         // perform a pid update 
         roomTemperature = thermometer->readTemperature();
 
-        Serial.print("room: ");
+        // Serial.print("room: ");
         Serial.print(roomTemperature);
         Serial.println(" C");
 
         boilerTemperature = pid->computeStep(roomTemperature);
 
-        Serial.print("heater: ");
+        // Serial.print("heater: ");
         Serial.print(boilerTemperature);
         Serial.println(" C");
 
         success = heater->setTemperature(boilerTemperature);
-        if (!success) {
-            Serial.println("write error");
-        }
+        // if (!success) {
+        //     Serial.println("write error");
+        // }
 
         // log the state to the server
         pidState = pid->getState();
@@ -106,9 +138,10 @@ void loop ()
         if (success) {
             sprintf(cBuf, "status: 0x%x", heaterStatus);
             Serial.println(cBuf);
-        } else {
-            Serial.println("read error");
         }
+        // } else {
+        //     Serial.println("read error");
+        // }
 
     } 
 }
