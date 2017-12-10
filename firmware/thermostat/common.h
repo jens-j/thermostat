@@ -21,11 +21,21 @@
 #define CLIENT_IP       "192.168.2.4"
 #define SERVER_PORT     8888
 
-// update periods in ms
-#define P_TICK          1    // fixed 1 ms system tick. All other periods are multiples of this tick
-#define P_UIO           20   // buttons sample and lcd update frequency    
-#define P_KEEPALIVE     1000 // minimal opentherm message frequency
-#define P_PID           5000 // control loop update frequency
+// system tick period
+#define T_TICK          20   // [ms]
+
+// update periods in multiples of the system tick
+#define M_UIO           1    // (20 ms) buttons sample and lcd update frequency 
+#define M_KEEPALIVE     50   // (1 s)   minimal opentherm message frequency
+#define M_PID           250  // (5 s)   control loop update frequency
+
+// pid coefficients
+#define PID_P           20  
+#define PID_I           0.05
+#define PID_D           0
+#define PID_IMAX        100
+#define PID_MIN_OUTPUT  10
+#define PID_MAX_OUTPUT  90
 
 /////////////////////////////////////////////////
 // CONVERSIONS

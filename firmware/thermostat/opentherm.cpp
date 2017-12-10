@@ -164,6 +164,9 @@ ot_recv_error_t OpenTherm::recvReply(uint64_t *frameBuf, int *n)
     *n = 0;
     *frameBuf = 0ULL;
 
+    recvFlag_ = false;
+    recvErrorCode_ = OT_RECV_ERR_NONE;
+
     while (millis() - t0 < T_SLAVE_RESP) {
 
         // print errors

@@ -25,15 +25,15 @@ volatile bool pidFlag = false;
 // increase counters and check if task should be scheduled
 void TIMER1_ISR ()
 {
-    if (++uioCount >= P_UIO) {
+    if (++uioCount >= M_UIO) {
         uioCount = 0;
         uioFlag = true;
     }
-    if (heater->ot->checkKeepAlive() >= P_KEEPALIVE) {
+    if (heater->ot->checkKeepAlive() >= M_KEEPALIVE) {
         heater->ot->resetKeepAlive();
         keepaliveFlag = true;
     }
-    if (++pidCount >= P_PID) {
+    if (++pidCount >= M_PID) {
         pidCount = 0;
         pidFlag = true;
     }
@@ -46,14 +46,14 @@ void setup ()
     Serial.begin(115200);
     Serial.println("initializing");
 
-    pid = new Pid(20.0,  // kP
-                  0.1,   // kI
-                  0.0,   // kD
-                  100.0, // Imax
+    pid = new Pid(PID_P,
+                  PID_I, 
+                  PID_D,
+                  PID_IMAX,
                   thermometer->readTemperature(),  // initial input
-                  20.0,  // setpoint
-                  0.0,   // minimal output
-                  100.0);// maximal output
+                  20, // setpoint
+                  PID_MIN_OUTPUT, 
+                  PID_MAX_OUTPUT);
 
     char cBuf[40];
     bool success = false;
@@ -65,8 +65,10 @@ void setup ()
         delay(1000);
     }
 
+    Serial.println("start\n");
+
     // set up the timer1 interrupt
-    Timer1.initialize(P_TICK * 1E3);
+    Timer1.initialize(T_TICK * 1E3);
     Timer1.attachInterrupt(TIMER1_ISR);
 }
 
@@ -79,28 +81,6 @@ void loop ()
     pid_state_log_t pidState;
     uint8_t heaterStatus;
 
-    // // perform a pid update 
-    // roomTemperature = thermometer->readTemperature();
-
-    // Serial.print("room: ");
-    // Serial.print(roomTemperature);
-    // Serial.println(" C");
-
-    // boilerTemperature = pid->computeStep(roomTemperature);
-
-    // Serial.print("heater: ");
-    // Serial.print(boilerTemperature);
-    // Serial.println(" C");
-
-    // delay(2000);
-
-    // success = heater->setTemperature(boilerTemperature);
-    // if (!success) {
-    //     Serial.println("write error");
-    // }
-
-    // delay(2000);
-
     if (uioFlag == true) {
         uioFlag = false;
 
@@ -112,20 +92,20 @@ void loop ()
         // perform a pid update 
         roomTemperature = thermometer->readTemperature();
 
-        // Serial.print("room: ");
+        Serial.print("room:   ");
         Serial.print(roomTemperature);
         Serial.println(" C");
 
         boilerTemperature = pid->computeStep(roomTemperature);
 
-        // Serial.print("heater: ");
+        Serial.print("heater: ");
         Serial.print(boilerTemperature);
         Serial.println(" C");
 
         success = heater->setTemperature(boilerTemperature);
-        // if (!success) {
-        //     Serial.println("write error");
-        // }
+        if (!success) {
+            Serial.println("write error");
+        }
 
         // log the state to the server
         pidState = pid->getState();
@@ -138,10 +118,9 @@ void loop ()
         if (success) {
             sprintf(cBuf, "status: 0x%x", heaterStatus);
             Serial.println(cBuf);
+        } else {
+            Serial.println("read error");
         }
-        // } else {
-        //     Serial.println("read error");
-        // }
 
     } 
 }

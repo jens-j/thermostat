@@ -17,10 +17,12 @@ Esp::Esp(int rx, int tx)
 
     // set up ther interface with the server
     sprintf(buf, "AT+CIPSTART=\"TCP\",\"%s\",%d\r\n", SERVER_IP, SERVER_PORT);
-    Serial.println(buf);
+    //Serial.println(buf);
     esp_->write(buf);  // connect to the server
+    //delay(1000);
     //printReply();
     esp_->write("AT+CIPMODE=1\r\n"); // set to unvarnished transmission mode
+    //delay(1000);
     //printReply();
     esp_->write("AT+CIPSEND\r\n"); // start sending data
 }
