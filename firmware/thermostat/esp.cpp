@@ -27,10 +27,10 @@ Esp::Esp(int rx, int tx)
     esp_->write("AT+CIPSEND\r\n"); // start sending data
 }
 
-void Esp::logPidState (pid_state_log_t update)
+void Esp::logPidState (state_log_t update)
 {
-    esp_->write((uint8_t) PID_UPDATE_LOG);
-    esp_->write((uint8_t*) &update, sizeof(pid_state_log_t));
+    esp_->write((uint8_t) UPDATE_LOG);
+    esp_->write((uint8_t*) &update, sizeof(state_log_t));
 }
 
 void Esp::printReply () {

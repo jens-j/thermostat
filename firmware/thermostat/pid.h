@@ -27,7 +27,7 @@ public:
     void changeCoefficients (float kP, float kI, float kD);
 
     // return a struct containing the controllers state
-    pid_state_log_t getState ();
+    void getState (state_t *state);
 
 private:
 

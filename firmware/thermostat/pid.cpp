@@ -63,17 +63,13 @@ void Pid::changeCoefficients (float kP, float kI, float kD)
     kD_ = kD; 
 }
 
-pid_state_log_t Pid::getState ()
+state_log_t Pid::getState (state_t *state)
 {
-    pid_state_log_t state = {
-        prevInput_,
-        prevOutput_,
-        setpoint_,
-        iTerm_,
-        kP_,
-        kI_,
-        kD_
-    };
-
-    return state;
+    (*state).pid_input = prevInput_;
+    (*state).pid_output = prevOutput_;
+    (*state).pid_setpoint = setpoint_;
+    (*state).pid_iTerm = iTerm_;
+    (*state).pid_kP = kP_;
+    (*state).pid_kI = kI_;
+    (*state).pid_kD = kD_;
 }

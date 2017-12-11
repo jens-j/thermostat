@@ -6,14 +6,16 @@
 #include "opentherm.h"
 #include "thermometer.h"
 #include "pid.h"
+#include "userio.h"
 
 // interface objects
 Esp *esp = new Esp(ESP_RX_PIN, ESP_TX_PIN);
 Heater *heater = new Heater(OT_INPUT_PIN, OT_OUTPUT_PIN);
 Thermometer *thermometer = new Thermometer(THERMOMETER_PIN, N_ADC_AVG);
 Pid *pid;
+UserIo *userIo;
 
-// isr tick counters 
+// isr global variables
 int uioCount = 0;
 int pidCount = 0;
 
@@ -21,6 +23,10 @@ int pidCount = 0;
 volatile bool uioFlag = false;
 volatile bool keepaliveFlag = false;
 volatile bool pidFlag = false;
+
+// main loop global variables
+state_log_t state;
+
 
 // increase counters and check if task should be scheduled
 void TIMER1_ISR ()
@@ -41,6 +47,10 @@ void TIMER1_ISR ()
 
 void setup ()
 {
+    char cBuf[40];
+    uint8_t heaterStatus;
+    bool success = false;
+
     delay(2000);
 
     Serial.begin(115200);
@@ -55,13 +65,17 @@ void setup ()
                   PID_MIN_OUTPUT, 
                   PID_MAX_OUTPUT);
 
-    char cBuf[40];
-    bool success = false;
-    uint8_t heaterStatus;
+    userIo = new UserIo(&pid);
+
+    // try to read the initial status of the boiler
     while (!success) {
         success = heater->getSetStatus(&heaterStatus);
-        sprintf(cBuf, "status: 0x%x", heaterStatus);
-        Serial.println(cBuf);
+        if (success) {
+            sprintf(cBuf, "status: 0x%x", heaterStatus);
+            Serial.println(cBuf);
+        } else {
+            Serial.println("could not read heater status");
+        }
         delay(1000);
     }
 
@@ -78,13 +92,12 @@ void loop ()
     bool success;
     float roomTemperature;
     float boilerTemperature;
-    pid_state_log_t pidState;
-    uint8_t heaterStatus;
-
+    
     if (uioFlag == true) {
         uioFlag = false;
 
-        // sample buttons
+        // read the buttons and update the lcd
+        userIo.update(state.heater_status);
 
     } else if (pidFlag == true) {
         pidFlag = false;
@@ -108,19 +121,19 @@ void loop ()
         }
 
         // log the state to the server
-        pidState = pid->getState();
-        esp->logPidState(pidState);
+        pid->getState(&state);
+        esp->logstate(state);
 
     } else if (keepaliveFlag == true) {
         keepaliveFlag = false;
 
-        success = heater->getSetStatus(&heaterStatus);
+        // read the heater status
+        success = heater->getSetStatus(&state.heaterStatus);
         if (success) {
-            sprintf(cBuf, "status: 0x%x", heaterStatus);
+            sprintf(cBuf, "status: 0x%x", state.heaterStatus);
             Serial.println(cBuf);
         } else {
             Serial.println("read error");
         }
-
     } 
 }
