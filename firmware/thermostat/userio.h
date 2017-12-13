@@ -1,3 +1,9 @@
+#ifndef USERIO_H
+#define USERIO_H
+
+#include <LiquidCrystal.h> 
+#include "common.h"
+#include "pid.h"
 
 enum button_state_t {
     BTN_RIGHT,
@@ -31,9 +37,11 @@ private:
     void printMenu_ (state_log_t state); 
 
     Pid *pid_;
-    LiquidCrystal lcd_;
+    LiquidCrystal *lcd_;
     menu_state_t menuState_;
     button_state_t prevButtonState_;
-    float newSetpoint_;
+    float setpoint_;
 
-}
+};
+
+#endif USERIO_H

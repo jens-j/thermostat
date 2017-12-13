@@ -10,7 +10,7 @@ public:
     // cosntructor
     Esp (int rx, int tx);
 
-    void logPidState (state_log_t update);
+    void logState (state_log_t update);
     void printReply ();
 
     SoftwareSerial *esp_; // serial interface to the ESP-1 module
