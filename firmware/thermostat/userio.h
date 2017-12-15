@@ -31,10 +31,13 @@ public:
     // read the buttons and update the lcd
     void update (uint8_t heaterState);
 
+    button_state_t getButtonState (); 
+    button_state_t getButtonEdge (); 
+
+    void printMenu (state_log_t state); 
+
 private:
 
-    button_state_t getButtonState_ (); // detects edges
-    void printMenu_ (state_log_t state); 
 
     Pid *pid_;
     LiquidCrystal *lcd_;

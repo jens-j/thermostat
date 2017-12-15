@@ -8,13 +8,11 @@ UserIo::UserIo (Pid *pid)
 {
     pid_ = pid;
     menuState_ = MENU_FRONT;
-    prevButtonState_ = getButtonState_();
-
-    pinMode(BUTTONS_PIN, INPUT);
+    prevButtonState_ = getButtonState();
     pinMode(LCD_BACKLIGHT_PIN, OUTPUT);
+    lcd_ = new LiquidCrystal(LCD_RS_PIN, LCD_ENABLE_PIN, LCD_DB4_PIN, LCD_DB5_PIN, LCD_DB6_PIN, LCD_DB7_PIN);
     //analogWrite(LCD_BACKLIGHT_PIN, 64);
     digitalWrite(LCD_BACKLIGHT_PIN, HIGH);
-    lcd_ = new LiquidCrystal(LCD_RS_PIN, LCD_ENABLE_PIN, LCD_DB4_PIN, LCD_DB5_PIN, LCD_DB6_PIN, LCD_DB7_PIN);
     lcd_->begin(16, 2);
 }
 
@@ -24,7 +22,7 @@ void UserIo::update (uint8_t heaterState)
     state_log_t state;
     state.heater_status = heaterState;
     pid_->getState(&state);
-    button_state_t buttonState = getButtonState_();
+    button_state_t buttonState = getButtonState();
 
     bool change = false;
     menu_state_t newMenuState = menuState_;
@@ -58,15 +56,17 @@ void UserIo::update (uint8_t heaterState)
     setpoint_ = newSetpoint;
     menuState_ = newMenuState;
 
-    //if (change) {
-        printMenu_(state);
-    //}   
+    // if (change) {
+        printMenu(state);
+    // }   
 }
 
-void UserIo::printMenu_ (state_log_t state) 
+void UserIo::printMenu (state_log_t state) 
 {
     char cBuf[10];
     char flame = (state.heater_status & 0x08) ? '*' : ' ';
+
+    Serial.println('a');
 
     switch (menuState_) {
         case MENU_FRONT:
@@ -96,25 +96,31 @@ void UserIo::printMenu_ (state_log_t state)
     }
 }
 
-// detects edges
-button_state_t UserIo::getButtonState_ () 
+button_state_t UserIo::getButtonState () 
 {
-    button_state_t buttonState;
+    noInterrupts();
     int value = analogRead(BUTTONS_PIN);
+    interrupts();
+    Serial.println(value);
 
     if (value < 73) {
-        buttonState = BTN_RIGHT;
+        return BTN_RIGHT;
     } else if (value <= 237) {
-        buttonState = BTN_UP;
+        return BTN_UP;
     } else if (value <= 417) {
-        buttonState = BTN_DOWN;
+        return BTN_DOWN;
     } else if (value <= 623) {
-        buttonState = BTN_LEFT;
+        return BTN_LEFT;
     } else if (value < 883) {
-        buttonState = BTN_SELECT;
+        return BTN_SELECT;
     } else {
-        buttonState = BTN_NONE;
+        return BTN_NONE;
     }
+}
+
+button_state_t UserIo::getButtonEdge () 
+{
+    button_state_t buttonState = getButtonState();
 
     if (prevButtonState_ != BTN_NONE) {
         prevButtonState_ = buttonState;
@@ -124,3 +130,4 @@ button_state_t UserIo::getButtonState_ ()
         return buttonState;
     }
 }
+

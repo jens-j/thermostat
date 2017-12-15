@@ -166,6 +166,12 @@ void loop ()
         // } else {
         //     Serial.println("read error");
         // }
+
+        // Serial.print("btn: ");
+        // Serial.println(userIo->getButtonState());
+
+        userIo->update(state.heater_status);
+
     } else if (uioFlag == true) {
         uioFlag = false;
 
