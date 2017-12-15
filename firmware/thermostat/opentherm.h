@@ -75,7 +75,7 @@ typedef struct message_s {
 } message_t;
 
 // message id strings for printings
-const String OT_MSG_T_STR[8] = {
+const char OT_MSG_T_STR[8][16] = {
     "READ_DATA",        // master to slave
     "WRITE_DATA",       // |
     "INVALID_DATA",     // |
@@ -87,7 +87,7 @@ const String OT_MSG_T_STR[8] = {
 };
 
 // opentherm receive error strings
-const String OT_RECV_ERROR_T_STR[8] = {
+const char OT_RECV_ERROR_T_STR[8][15] = {
     "ERR_NONE",
     "ERR_FIRST_EDGE",
     "ERR_EDGE_EARLY",

@@ -46,11 +46,16 @@
 #define PID_MIN_OUTPUT      10
 #define PID_MAX_OUTPUT      90
 
+
 /////////////////////////////////////////////////
-// CONVERSIONS
+// Functions
 /////////////////////////////////////////////////
 
+// convert pin number to interrupt number
 #define PIN_TO_INT(x) (x == 2 ? 0 : (x == 3 ? 1 : -1))
+
+// check how much free ram is available
+int freeRam ();
 
 
 /////////////////////////////////////////////////

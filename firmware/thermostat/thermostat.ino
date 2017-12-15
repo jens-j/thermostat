@@ -28,6 +28,13 @@ volatile bool pidFlag = false;
 // main loop global variables
 state_log_t state;
 
+// check how much free ram is available
+int freeRam () 
+{
+  extern int __heap_start, *__brkval; 
+  int v; 
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+}
 
 // increase counters and check if task should be scheduled
 void TIMER1_ISR ()
@@ -48,6 +55,7 @@ void TIMER1_ISR ()
 
 void setup ()
 {
+
     char cBuf[40];
     uint8_t heaterStatus;
     bool success = false;
@@ -55,7 +63,10 @@ void setup ()
     delay(1000);
 
     Serial.begin(115200);
-    Serial.println("initializing");
+    Serial.println("init");
+
+    Serial.print("a: ");
+    Serial.println(freeRam());
 
     pid = new Pid(PID_P,
                   PID_I, 
@@ -67,6 +78,9 @@ void setup ()
                   PID_MAX_OUTPUT);
 
     userIo = new UserIo(pid);
+
+    Serial.print("b: ");
+    Serial.println(freeRam());
 
     // // try to read the initial status of the boiler
     // while (!success) {
@@ -82,70 +96,81 @@ void setup ()
 
     Serial.println("start\n");
 
+    float roomTemperature;
+    float boilerTemperature;
 
-    // float roomTemperature;
-    // float boilerTemperature;
+    Serial.print("c: ");
+    Serial.println(freeRam());
 
-    // heater->getSetStatus(&heaterStatus);
-    // roomTemperature = thermometer->readTemperature();
-    // boilerTemperature = pid->computeStep(roomTemperature);
-    // // pid->getState(&state);
+    heater->getSetStatus(&heaterStatus);
+    roomTemperature = thermometer->readTemperature();
+    boilerTemperature = pid->computeStep(roomTemperature);
+    pid->getState(&state);
     userIo->update(state.heater_status);
 
+    Serial.print("d: ");
+    Serial.println(freeRam());
 
-    // // set up the timer1 interrupt
-    // Timer1.initialize(T_TICK * 1E3);
-    // Timer1.attachInterrupt(TIMER1_ISR);
+    // set up the timer1 interrupt
+    Timer1.initialize(T_TICK * 1E3);
+    Timer1.attachInterrupt(TIMER1_ISR);
 }
 
 void loop ()
 {
     // char cBuf[80];
-    // bool success;
-    // float roomTemperature;
-    // float boilerTemperature;
+    bool success;
+    float roomTemperature;
+    float boilerTemperature;
     
-    // if (pidFlag == true) {
-    //     pidFlag = false;
+    if (pidFlag == true) {
+        pidFlag = false;
 
-    //     // perform a pid update 
-    //     roomTemperature = thermometer->readTemperature();
+        Serial.print("e: ");
+        Serial.println(freeRam());
 
-    //     Serial.print("room:   ");
-    //     Serial.print(roomTemperature);
-    //     Serial.println(" C");
+        // perform a pid update 
+        roomTemperature = thermometer->readTemperature();
 
-    //     boilerTemperature = pid->computeStep(roomTemperature);
+        Serial.print(F("room:   "));
+        Serial.print(roomTemperature);
+        Serial.println(F(" C"));
 
-    //     Serial.print("heater: ");
-    //     Serial.print(boilerTemperature);
-    //     Serial.println(" C");
+        boilerTemperature = pid->computeStep(roomTemperature);
 
-    //     success = heater->setTemperature(boilerTemperature);
-    //     if (!success) {
-    //         Serial.println("write error");
-    //     }
+        Serial.print(F("heater: "));
+        Serial.print(boilerTemperature);
+        Serial.println(F(" C"));
 
-    //     // log the state to the server
-    //     pid->getState(&state);
-    //     esp->logState(state);
+        // success = heater->setTemperature(boilerTemperature);
+        // if (!success) {
+        //     Serial.println("write error");
+        // }
 
-    // } else if (keepaliveFlag == true) {
-    //     keepaliveFlag = false;
+        // log the state to the server
+        pid->getState(&state);
+        esp->logState(state);
+        userIo->update(state.heater_status);
 
-    //     // read the heater status
-    //     success = heater->getSetStatus(&state.heater_status);
-    //     if (success) {
-    //         sprintf(cBuf, "status: 0x%x", state.heater_status);
-    //         Serial.println(cBuf);
-    //     } else {
-    //         Serial.println("read error");
-    //     }
-    // } else if (uioFlag == true) {
-    //     uioFlag = false;
+        Serial.print("f: ");
+        Serial.println(freeRam());
 
-    //     // read the buttons and update the lcd
-    //     userIo->update(state.heater_status);
+    } else if (keepaliveFlag == true) {
+        keepaliveFlag = false;
 
-    // }
+        // // read the heater status
+        // success = heater->getSetStatus(&state.heater_status);
+        // if (success) {
+        //     sprintf(cBuf, "status: 0x%x", state.heater_status);
+        //     Serial.println(cBuf);
+        // } else {
+        //     Serial.println("read error");
+        // }
+    } else if (uioFlag == true) {
+        uioFlag = false;
+
+        // read the buttons and update the lcd
+        // userIo->update(state.heater_status);
+
+    }
 }

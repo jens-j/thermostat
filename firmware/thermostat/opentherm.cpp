@@ -1,4 +1,3 @@
-#include <stdint.h>
 #include <avr/wdt.h>
 #include "Arduino.h"
 #include "common.h"
@@ -305,7 +304,6 @@ void OpenTherm::setRecvError_ (ot_recv_error_t errorCode)
 // returns the bitwise or of all applicable error codes
 uint8_t OpenTherm::parseFrame (uint64_t frameBuf, message_t *msg)
 {
-    char cBuf[40];
     uint8_t error = OT_PARSE_ERR_NONE;
     uint32_t msgBuf = (uint32_t) (frameBuf >> 1);
     *msg = parseMessage(msgBuf);
@@ -342,25 +340,31 @@ message_t OpenTherm::parseMessage (uint32_t buf)
 // pretty print an opentherm frame
 void OpenTherm::printFrame(uint64_t frameBuf) {
 
-    char cBuffer[100];
     message_t msg;
 
-    sprintf(cBuffer, "raw msg: 0x%08lx%08lx", (uint32_t) (frameBuf >> 32), (uint32_t) frameBuf);
-    Serial.println(cBuffer);
+    Serial.print(F("raw msg: 0x"));
+    Serial.print((uint32_t) (frameBuf >> 32), HEX);
+    Serial.println((uint32_t) (frameBuf >> 32), HEX);
 
     uint8_t errorCode = parseFrame(frameBuf, &msg);
     if (errorCode != OT_PARSE_ERR_NONE) {
-        sprintf(cBuffer, "incorrect message format (0x%x)", errorCode);
-        Serial.println(cBuffer);
+        Serial.print(F("incorrect message format (0x"));
+        Serial.print(errorCode, HEX);
+        Serial.println(F(")"));
     }
 
 
-    Serial.print("msg type: ");
+    Serial.print(F("msg type: "));
     Serial.println(OT_MSG_T_STR[msg.msgType]);
-    Serial.print("data id:    ");
+
+    Serial.print(F("data id:    "));
     Serial.println(msg.dataId);
-    sprintf(cBuffer, "data value: %d (0x%x)", msg.dataValue, msg.dataValue);
-    Serial.print(cBuffer);
+
+    Serial.print(F("data value: "));
+    Serial.print(msg.dataValue);
+    Serial.print(F(" (0x"));
+    Serial.print(msg.dataValue, HEX);
+    Serial.println(F(")"));
 }
 
 

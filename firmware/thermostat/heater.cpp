@@ -1,4 +1,3 @@
-#include <math.h>
 #include "heater.h"
 
 Heater::Heater (int openthermIn, int openthermOut)
