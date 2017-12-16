@@ -12,6 +12,9 @@ float Thermometer::readTemperature () {
     int i;
     uint32_t sum = 0;
     
+    // analogReference(INTERNAL);
+    // delay(20);
+
     for (i = 0; i < nAverages_; i++) {
       sum += analogRead(pin_);
     }

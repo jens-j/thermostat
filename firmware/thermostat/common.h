@@ -26,17 +26,17 @@
 #define N_ADC_AVG           50
 
 // server address
-#define SERVER_IP           "192.168.2.2"
-#define CLIENT_IP           "192.168.2.4"
+#define SERVER_IP           "192.168.2.3"
+#define CLIENT_IP           "192.168.2.1"
 #define SERVER_PORT         8888
 
 // system tick period
-#define T_TICK              20   // [ms]
+#define T_TICK              2 // [ms] needs to be low because it also defines the pwm frequency
 
 // update periods in multiples of the system tick
-#define M_UIO               1    // (20 ms) buttons sample and lcd update frequency 
-#define M_KEEPALIVE         50   // (1 s)   minimal opentherm message frequency
-#define M_PID               250  // (5 s)   control loop update frequency
+#define M_UIO               10    // (20 ms) buttons sample and lcd update frequency 
+#define M_KEEPALIVE         500   // (1 s)   minimal opentherm message frequency
+#define M_PID               2500  // (5 s)   control loop update frequency
 
 // pid coefficients
 #define PID_P               20  

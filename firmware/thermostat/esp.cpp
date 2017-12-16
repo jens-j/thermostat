@@ -25,6 +25,8 @@ Esp::Esp(int rx, int tx)
     //delay(1000);
     //printReply();
     esp_->write("AT+CIPSEND\r\n"); // start sending data
+    //delay(1000);
+    //printReply();
 }
 
 void Esp::logState (state_log_t update)

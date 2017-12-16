@@ -65,8 +65,8 @@ void setup ()
     Serial.begin(115200);
     Serial.println("init");
 
-    Serial.print("a: ");
-    Serial.println(freeRam());
+    // set up the timer1 interrupt (needed for lcb backlight pwm)
+    Timer1.initialize(T_TICK * 1E3);
 
     pid = new Pid(PID_P,
                   PID_I, 
@@ -78,9 +78,6 @@ void setup ()
                   PID_MAX_OUTPUT);
 
     userIo = new UserIo(pid);
-
-    Serial.print("b: ");
-    Serial.println(freeRam());
 
     // // try to read the initial status of the boiler
     // while (!success) {
@@ -95,24 +92,6 @@ void setup ()
     // }
 
     Serial.println("start\n");
-
-    float roomTemperature;
-    float boilerTemperature;
-
-    Serial.print("c: ");
-    Serial.println(freeRam());
-
-    heater->getSetStatus(&heaterStatus);
-    roomTemperature = thermometer->readTemperature();
-    boilerTemperature = pid->computeStep(roomTemperature);
-    pid->getState(&state);
-    userIo->update(state.heater_status);
-
-    Serial.print("d: ");
-    Serial.println(freeRam());
-
-    // set up the timer1 interrupt
-    Timer1.initialize(T_TICK * 1E3);
     Timer1.attachInterrupt(TIMER1_ISR);
 }
 
@@ -126,13 +105,10 @@ void loop ()
     if (pidFlag == true) {
         pidFlag = false;
 
-        Serial.print("e: ");
-        Serial.println(freeRam());
-
         // perform a pid update 
         roomTemperature = thermometer->readTemperature();
 
-        Serial.print(F("room:   "));
+        Serial.print(F("\nroom:   "));
         Serial.print(roomTemperature);
         Serial.println(F(" C"));
 
@@ -150,10 +126,6 @@ void loop ()
         // log the state to the server
         pid->getState(&state);
         esp->logState(state);
-        userIo->update(state.heater_status);
-
-        Serial.print("f: ");
-        Serial.println(freeRam());
 
     } else if (keepaliveFlag == true) {
         keepaliveFlag = false;
@@ -166,9 +138,6 @@ void loop ()
         // } else {
         //     Serial.println("read error");
         // }
-
-        // Serial.print("btn: ");
-        // Serial.println(userIo->getButtonState());
 
         userIo->update(state.heater_status);
 

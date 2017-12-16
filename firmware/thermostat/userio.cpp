@@ -1,5 +1,6 @@
 #include <LiquidCrystal.h>
 #include "Arduino.h"
+#include "TimerOne.h"
 #include "common.h"
 #include "pid.h"
 #include "userio.h"
@@ -9,10 +10,10 @@ UserIo::UserIo (Pid *pid)
     pid_ = pid;
     menuState_ = MENU_FRONT;
     prevButtonState_ = getButtonState();
+    pinMode(BUTTONS_PIN, INPUT);
     pinMode(LCD_BACKLIGHT_PIN, OUTPUT);
+    Timer1.pwm(LCD_BACKLIGHT_PIN, 256);
     lcd_ = new LiquidCrystal(LCD_RS_PIN, LCD_ENABLE_PIN, LCD_DB4_PIN, LCD_DB5_PIN, LCD_DB6_PIN, LCD_DB7_PIN);
-    //analogWrite(LCD_BACKLIGHT_PIN, 64);
-    digitalWrite(LCD_BACKLIGHT_PIN, HIGH);
     lcd_->begin(16, 2);
 }
 
@@ -66,8 +67,6 @@ void UserIo::printMenu (state_log_t state)
     char cBuf[10];
     char flame = (state.heater_status & 0x08) ? '*' : ' ';
 
-    Serial.println('a');
-
     switch (menuState_) {
         case MENU_FRONT:
             lcd_->setCursor(0, 0);
@@ -98,10 +97,9 @@ void UserIo::printMenu (state_log_t state)
 
 button_state_t UserIo::getButtonState () 
 {
-    noInterrupts();
+    //analogReference(DEFAULT);
     int value = analogRead(BUTTONS_PIN);
-    interrupts();
-    Serial.println(value);
+    //analogReference(INTERNAL);
 
     if (value < 73) {
         return BTN_RIGHT;

@@ -221,9 +221,6 @@ void OpenTherm::otIsr() {
     if (recvBusyFlag_ == false) {
         // the first edge should always be rising
         if (!inputState) {
-            pinMode(7, OUTPUT);
-            digitalWrite(7, HIGH);
-            digitalWrite(7, LOW);
             setRecvError_(OT_RECV_ERR_FIRST_EDGE);
             return;
         }
