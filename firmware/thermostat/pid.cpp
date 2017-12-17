@@ -34,7 +34,7 @@ float Pid::computeStep (float input)
     float dInput = (input - prevInput_) / dt;
 
     iTerm_ += kI_ * error * dt;
-    iTerm_ = constrain(iTerm_, outputMin_, outputMax_);
+    iTerm_ = constrain(iTerm_, 0, outputMax_);
 
     if (input < setpoint_) {
 

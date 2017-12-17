@@ -10,7 +10,10 @@ public:
     Thermometer ();
 
     // sample the thermometer and update the average
-    float getTemperature ();
+    void update ();
+
+    // return the temperature average
+    float getTemperature () {return averageTemperature_;}
 
 private:
 

@@ -24,7 +24,7 @@
 
 // thermometer parameters
 #define TMP_ADC_AVG         50  // number of averaged ADC samples for temperature readings
-#define TMP_C_IIR           0.1 //  
+#define TMP_C_IIR           0.01 //  
 
 // server address
 #define SERVER_IP           "192.168.2.3"
@@ -35,9 +35,10 @@
 #define T_TICK              2 // [ms] needs to be low because it also defines the pwm frequency
 
 // update periods in multiples of the system tick
-#define M_UIO               10    // (20 ms) buttons sample and lcd update frequency 
-#define M_KEEPALIVE         500   // (1 s)   minimal opentherm message frequency
-#define M_PID               2500  // (5 s)   control loop update frequency
+#define M_UIO               10    // (20 ms)  buttons sample and lcd update frequency 
+#define M_TEMPERATURE       50    // (100 ms) temperature reading
+#define M_KEEPALIVE         500   // (1 s)    minimal opentherm message frequency
+#define M_PID               2500  // (5 s)    control loop update frequency
 
 // pid coefficients
 #define PID_P               20  

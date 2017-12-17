@@ -18,10 +18,12 @@ UserIo *userIo;
 
 // isr global variables
 int uioCount = 0;
+int tempCount = 0;
 int pidCount = 0;
 
 // isr <-> main loop communication variables
 volatile bool uioFlag = false;
+volatile bool tempFlag = false;
 volatile bool keepaliveFlag = false;
 volatile bool pidFlag = false;
 
@@ -34,6 +36,10 @@ void TIMER1_ISR ()
     if (++uioCount >= M_UIO) {
         uioCount = 0;
         uioFlag = true;
+    }
+    if (++tempCount >= M_TEMPERATURE) {
+        tempCount = 0;
+        tempFlag = true;
     }
     if (heater->ot->checkKeepAlive() >= M_KEEPALIVE) {
         heater->ot->resetKeepAlive();
@@ -60,12 +66,14 @@ void setup ()
     // set up the timer1 interrupt (needed for lcb backlight pwm)
     Timer1.initialize(T_TICK * 1E3);
 
+    thermometer->update();
+
     pid = new Pid(PID_P,
                   PID_I, 
                   PID_D,
                   PID_IMAX,
                   thermometer->getTemperature(),  // initial input
-                  20, // setpoint
+                  21, // setpoint
                   PID_MIN_OUTPUT, 
                   PID_MAX_OUTPUT);
 
@@ -99,7 +107,19 @@ void loop ()
     float roomTemperature;
     float boilerTemperature;
     
-    if (keepaliveFlag == true) {
+    if (uioFlag) {
+        uioFlag = false;
+
+        // read the buttons and update the lcd
+        userIo->update(state);
+
+
+    } else if (tempFlag) {
+        tempFlag = false;
+
+        thermometer->update();
+
+    } else if (keepaliveFlag) {
         keepaliveFlag = false;
 
         // // read the heater status
@@ -111,9 +131,9 @@ void loop ()
         //     Serial.println("read error");
         // }
 
-        state->temperature = thermometer->getTemperature();
+        state->temperature = thermometer->getTemperature();        
 
-    } else if (pidFlag == true) {
+    } else if (pidFlag) {
         pidFlag = false;
 
         boilerTemperature = pid->computeStep(state->temperature);
@@ -127,10 +147,5 @@ void loop ()
         pid->getState(&(state->pid));
         esp->logState(state);
 
-    } else if (uioFlag == true) {
-        uioFlag = false;
-
-        // read the buttons and update the lcd
-        userIo->update(state);
     }
 }

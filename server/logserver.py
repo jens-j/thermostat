@@ -35,8 +35,8 @@ try:
                 print('received: %s' % recvBuffer)
 
                 try:
-                    msgType, input, output, setPoint, iTerm, kP, kI, kD = \
-                        struct.unpack('<Bfffffff', recvBuffer[-29:])
+                    msgType, input, output, setPoint, iTerm, kP, kI, kD, heater_status, temperature = \
+                        struct.unpack('<BfffffffBf', recvBuffer[-34:])
                 except Exception as e:
                     print('exception: %s' % str(e))
                 else:
