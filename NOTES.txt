@@ -8,3 +8,7 @@
 - check remote parameter availability (dhw temp and max ch temp)
 
 - make a function to check received messages for errors and parses the message
+
+- when a receive error is encountered, the receive function should keep trying to receive for the duration of the response time.
+
+- fix logging format and log heater state
