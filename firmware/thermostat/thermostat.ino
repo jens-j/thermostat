@@ -71,6 +71,8 @@ void setup ()
 
     userIo = new UserIo(pid);
 
+    esp->initialize();
+
     // // try to read the initial status of the boiler
     // while (!success) {
     //     success = heater->getSetStatus(&heaterStatus);
@@ -114,16 +116,7 @@ void loop ()
     } else if (pidFlag == true) {
         pidFlag = false;
 
-        // // perform a pid update 
-        // Serial.print(F("\nroom:   "));
-        // Serial.print(state->temperature);
-        // Serial.println(F(" C"));
-
         boilerTemperature = pid->computeStep(state->temperature);
-
-        // Serial.print(F("heater: "));
-        // Serial.print(boilerTemperature);
-        // Serial.println(F(" C"));
 
         // success = heater->setTemperature(boilerTemperature);
         // if (!success) {

@@ -7,7 +7,7 @@ void setup() {
   Serial.begin(9600);
   esp.begin(9600);
 
-  esp.write("AT+CIPSTART=\"TCP\",\"192.168.2.2\",8888\r\n");
+  esp.write("AT+CIPSTART=\"TCP\",\"192.168.2.3\",8888\r\n");
   delay(1000);
   esp.write("AT+CIPMODE=1\r\n");
   delay(1000);

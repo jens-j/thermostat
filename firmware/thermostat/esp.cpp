@@ -5,8 +5,6 @@
 
 Esp::Esp(int rx, int tx)
 {
-    char buf[100];
-
     // set arduino pin directions
     pinMode(rx, INPUT);
     pinMode(tx, OUTPUT);
@@ -14,19 +12,19 @@ Esp::Esp(int rx, int tx)
     // setup the serial interface with the esp
     esp_ = new SoftwareSerial(rx, tx);
     esp_->begin(9600);
+}
 
-    // set up ther interface with the server
+// set up the interface with the server
+void Esp::initialize () 
+{
+    char buf[40];
+
     sprintf(buf, "AT+CIPSTART=\"TCP\",\"%s\",%d\r\n", SERVER_IP, SERVER_PORT);
-    //Serial.println(buf);
     esp_->write(buf);  // connect to the server
-    //delay(1000);
-    //printReply();
+    delay(1000);
     esp_->write("AT+CIPMODE=1\r\n"); // set to unvarnished transmission mode
-    //delay(1000);
-    //printReply();
+    delay(1000);
     esp_->write("AT+CIPSEND\r\n"); // start sending data
-    //delay(1000);
-    //printReply();
 }
 
 void Esp::logState (state_t *update)

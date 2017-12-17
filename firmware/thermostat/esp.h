@@ -10,6 +10,9 @@ public:
     // cosntructor
     Esp (int rx, int tx);
 
+    // set up the interface with the server
+    void initialize ();
+
     void logState (state_t *update);
     void printReply ();
 
