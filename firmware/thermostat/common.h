@@ -1,6 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include "Arduino.h"
 
 /////////////////////////////////////////////////
 // CONSTANTS
@@ -21,9 +22,9 @@
 #define LCD_ENABLE_PIN      9
 #define LCD_BACKLIGHT_PIN   10
 
-
-// number of averaged ADC samples for temperature readings
-#define N_ADC_AVG           50
+// thermometer parameters
+#define TMP_ADC_AVG         50  // number of averaged ADC samples for temperature readings
+#define TMP_C_IIR           0.1 //  
 
 // server address
 #define SERVER_IP           "192.168.2.3"
@@ -40,11 +41,12 @@
 
 // pid coefficients
 #define PID_P               20  
-#define PID_I               0.05
+#define PID_I               0.01
 #define PID_D               0
 #define PID_IMAX            100
 #define PID_MIN_OUTPUT      10
 #define PID_MAX_OUTPUT      90
+
 
 
 /////////////////////////////////////////////////
@@ -56,7 +58,6 @@
 
 // check how much free ram is available
 int freeRam ();
-
 
 /////////////////////////////////////////////////
 // TYPE DECLARATIONS
@@ -70,16 +71,22 @@ enum esp_msg_t {STATE_LOG      = 0,
                 PID_COEFFS_CMD = 2};
 
 // pid step update log message structure
-typedef struct state_log_s {
-    float pid_input;
-    float pid_output;
-    float pid_setpoint;
-    float pid_iTerm;
-    float pid_kP;
-    float pid_kI;
-    float pid_kD;
+typedef struct pid_state_s {
+    float input;
+    float output;
+    float setpoint;
+    float iTerm;
+    float kP;
+    float kI;
+    float kD;
+} pid_state_t;
+
+// pid step update log message structure
+typedef struct state_s {
+    pid_state_t pid;
     uint8_t heater_status;
-} state_log_t;
+    float temperature;
+} state_t;
 
 // system setpoint update message
 typedef struct setpoint_cmd_s {

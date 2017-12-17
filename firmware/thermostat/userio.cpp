@@ -14,27 +14,25 @@ UserIo::UserIo (Pid *pid)
     pinMode(LCD_BACKLIGHT_PIN, OUTPUT);
     Timer1.pwm(LCD_BACKLIGHT_PIN, 256);
     lcd_ = new LiquidCrystal(LCD_RS_PIN, LCD_ENABLE_PIN, LCD_DB4_PIN, LCD_DB5_PIN, LCD_DB6_PIN, LCD_DB7_PIN);
+    lcd_->createChar(0, upArrow);
     lcd_->begin(16, 2);
 }
 
-void UserIo::update (uint8_t heaterState)
+void UserIo::update (state_t *state)
 {
     // collect state information
-    state_log_t state;
-    state.heater_status = heaterState;
-    pid_->getState(&state);
-    button_state_t buttonState = getButtonState();
+    button_state_t buttonState = getButtonEdge();
 
     bool change = false;
     menu_state_t newMenuState = menuState_;
-    float newSetpoint = setpoint_;
+    float prevSetpoint = setpoint_;
 
     // process button input
     switch (menuState_) {
         case MENU_FRONT:
             if (buttonState == BTN_SELECT) {
-                setpoint_ = state.pid_setpoint;
-                menuState_ = MENU_SETPOINT;
+                setpoint_ = state->pid.setpoint;
+                newMenuState = MENU_SETPOINT;
             }
             break;
 
@@ -45,53 +43,60 @@ void UserIo::update (uint8_t heaterState)
                 setpoint_ -= 0.5;
             } else if (buttonState == BTN_SELECT) {
                 pid_->changeSetpoint(setpoint_);
-                state.pid_setpoint = setpoint_;
-                menuState_ = MENU_FRONT;
+                state->pid.setpoint = setpoint_;
+                newMenuState = MENU_FRONT;
             }
     }
 
-    if (newSetpoint != setpoint_ || newMenuState != menuState_) {
+    if (setpoint_ != prevSetpoint || newMenuState != menuState_ || 
+            memcmp(&prevState_, state, sizeof(state_t))) {
         change = true;
     }
 
-    setpoint_ = newSetpoint;
     menuState_ = newMenuState;
+    memcpy(&prevState_, state, sizeof(state_t));
 
-    // if (change) {
+    if (change) {
         printMenu(state);
-    // }   
+    }   
 }
 
-void UserIo::printMenu (state_log_t state) 
+void UserIo::printMenu (state_t *state) 
 {
     char cBuf[10];
-    char flame = (state.heater_status & 0x08) ? '*' : ' ';
 
     switch (menuState_) {
         case MENU_FRONT:
             lcd_->setCursor(0, 0);
-            dtostrf(state.pid_input, 5, 2, cBuf);
+            lcd_->print(F(" "));
+            dtostrf(state->temperature, 5, 2, cBuf);
             lcd_->print(cBuf);
             lcd_->print(F(" ["));
-            dtostrf(state.pid_setpoint, 5, 2, cBuf);
+            dtostrf(state->pid.setpoint, 5, 2, cBuf);
             lcd_->print(cBuf);
             lcd_->print(F("] C"));
 
             lcd_->setCursor(0, 1);
-            dtostrf(state.pid_output, 5, 2, cBuf);
+            if (state->heater_status) {
+                lcd_->print(0);
+            } else {
+                lcd_->write(' ');
+            }
+            dtostrf(0.0, 5, 2, cBuf);
             lcd_->print(cBuf);
-            lcd_->print(F(" C ["));
-            lcd_->print(flame);
-            lcd_->print(F("]"));
+            lcd_->print(F(" ["));
+            dtostrf(state->pid.output, 5, 2, cBuf);
+            lcd_->print(cBuf);
+            lcd_->print(F("] C"));
             break;
 
         case MENU_SETPOINT:
             lcd_->setCursor(0, 0);
-            lcd_->print(F("setpoint:"));
+            lcd_->print(F("setpoint:           "));
             lcd_->setCursor(0, 1);
             dtostrf(setpoint_, 5, 2, cBuf);
             lcd_->print(cBuf);
-            lcd_->print(F(" C"));
+            lcd_->print(F(" C             "));
     }
 }
 

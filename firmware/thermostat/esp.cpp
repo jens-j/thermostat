@@ -29,16 +29,15 @@ Esp::Esp(int rx, int tx)
     //printReply();
 }
 
-void Esp::logState (state_log_t update)
+void Esp::logState (state_t *update)
 {
     esp_->write((uint8_t) STATE_LOG);
-    esp_->write((uint8_t*) &update, sizeof(state_log_t));
+    esp_->write((uint8_t*) update, sizeof(state_t));
 }
 
 void Esp::printReply () {
     delay(100);
     while (esp_->available()) {
         Serial.write(esp_->read());
-        //esp_->read();
     }
 }
