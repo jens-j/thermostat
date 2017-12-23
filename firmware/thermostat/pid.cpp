@@ -12,7 +12,6 @@ Pid::Pid (float kP,
           float outputMin,
           float outputMax)
 {
-    Serial.println("pid init");
     changeCoefficients(kP, kI, kD);
     iMax_ = iMax;
     prevInput_ = input;
@@ -37,20 +36,15 @@ float Pid::computeStep (float input)
     iTerm_ += kI_ * error * dt;
     iTerm_ = constrain(iTerm_, 0, outputMax_);
 
-    if (input < setpoint_) {
+    // p on e & d on m
+    output = kP_ * error + iTerm_ - kD_ * dInput;  
 
-        // p on e & d on m
-        output = kP_ * error + iTerm_ - kD_ * dInput;  
-
-        // p on m & d on m
-        // float output = -kP_ * (input - initInput_) + iTerm_ - kD_ * dInput; // p on m & d on m
-        
-        // positive pid output should result in boiler water which is warmer than the room temerature
-        output = output + input; 
-        output = constrain(output, outputMin_, outputMax_);
-    } else {
-        output = outputMin_;
-    }
+    // p on m & d on m
+    // float output = -kP_ * (input - initInput_) + iTerm_ - kD_ * dInput; // p on m & d on m
+    
+    // positive pid output should result in boiler water which is warmer than the room temerature
+    output = output + input; 
+    output = constrain(output, outputMin_, outputMax_);
 
     prevInput_ = input;
     prevOutput_ = output;

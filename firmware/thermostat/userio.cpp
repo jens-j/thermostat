@@ -31,7 +31,7 @@ void UserIo::update (state_t *state)
     switch (menuState_) {
         case MENU_FRONT:
             if (buttonState == BTN_SELECT) {
-                setpoint_ = state->pid.setpoint;
+                setpoint_ = ROUND(state->pid.setpoint * 2) / 2.0;
                 newMenuState = MENU_SETPOINT;
             }
             break;

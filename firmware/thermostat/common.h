@@ -23,8 +23,8 @@
 #define LCD_BACKLIGHT_PIN   10
 
 // thermometer parameters
-#define TMP_ADC_AVG         50  // number of averaged ADC samples for temperature readings
-#define TMP_C_IIR           0.01 //  
+#define TMP_ADC_AVG         50   // number of averaged ADC samples for temperature readings
+#define TMP_C_IIR           0.02 // moving average coefficient
 
 // server address
 #define SERVER_IP           "192.168.2.3"
@@ -35,11 +35,12 @@
 #define T_TICK              2 // [ms] needs to be low because it also defines the pwm frequency
 
 // update periods in multiples of the system tick
-#define M_UIO               500    // (20 ms)  buttons sample and lcd update frequency 
-#define M_TEMPERATURE       50    // (100 ms) temperature reading
+#define M_UIO               10    // (20 ms)  buttons sample and lcd update frequency 
+#define M_TEMP_READ         50    // (100 ms) temperature filter update
+#define M_TEMP_DISP         250   // (500 ms) temperature display updates
 #define M_KEEPALIVE         500   // (1 s)    minimal opentherm message frequency
 #define M_CMD               500   // (1 s)    esp cmd poll
-#define M_PID               1000  // (2 s)    control loop update frequency
+#define M_PID               2500  // (5 s)    control loop update frequency
 
 // pid coefficients
 #define PID_P               20  
@@ -56,6 +57,8 @@
 
 // convert pin number to interrupt number
 #define PIN_TO_INT(x) (x == 2 ? 0 : (x == 3 ? 1 : -1))
+
+#define ROUND(x) (x - (int) x < 0.5 ? (int) x : (int) x + 1) 
 
 // check how much free ram is available
 int freeRam ();

@@ -18,13 +18,15 @@ UserIo *userIo;
 
 // isr global variables
 int uioCount = 0;
-int tempCount = 0;
+int tempReadCount = 0;
+int tempDispCount = 0;
 int cmdCount = 0;
 int pidCount = 0;
 
 // isr <-> main loop communication variables
 volatile bool uioFlag = false;
-volatile bool tempFlag = false;
+volatile bool tempReadFlag = false;
+volatile bool tempDispFlag = false;
 volatile bool cmdFlag = false;
 volatile bool keepaliveFlag = false;
 volatile bool pidFlag = false;
@@ -39,9 +41,13 @@ void TIMER1_ISR ()
         uioCount = 0;
         uioFlag = true;
     }
-    if (++tempCount >= M_TEMPERATURE) {
-        tempCount = 0;
-        tempFlag = true;
+    if (++tempReadCount >= M_TEMP_READ) {
+        tempReadCount = 0;
+        tempReadFlag = true;
+    }
+    if (++tempDispCount >= M_TEMP_DISP) {
+        tempDispCount = 0;
+        tempDispFlag = true;
     }
     if (++cmdCount >= M_CMD) {
         cmdCount = 0;
@@ -119,10 +125,14 @@ void loop ()
         userIo->update(state);
 
 
-    } else if (tempFlag) {
-        tempFlag = false;
+    } else if (tempReadFlag) {
+        tempReadFlag = false;
 
         thermometer->update();
+
+    } else if (tempDispFlag) {
+        tempDispFlag = false;
+        state->temperature = thermometer->getTemperature();    
 
     } else if (cmdFlag) {
         cmdFlag = false;
@@ -140,9 +150,6 @@ void loop ()
         // } else {
         //     Serial.println("read error");
         // }
-
-        state->temperature = thermometer->getTemperature();        
-
     } 
     else if (pidFlag) {
         pidFlag = false;
