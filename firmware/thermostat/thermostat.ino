@@ -10,9 +10,9 @@
 #include "userio.h"
 
 // interface objects
-Esp *esp = new Esp(ESP_RX_PIN, ESP_TX_PIN);
 Heater *heater = new Heater(OT_INPUT_PIN, OT_OUTPUT_PIN);
 Thermometer *thermometer = new Thermometer();
+Esp *esp;
 Pid *pid;
 UserIo *userIo;
 
@@ -82,9 +82,8 @@ void setup ()
                   21, // setpoint
                   PID_MIN_OUTPUT, 
                   PID_MAX_OUTPUT);
-
     userIo = new UserIo(pid);
-
+    esp = new Esp(ESP_RX_PIN, ESP_TX_PIN, pid);
     esp->initialize();
 
     // // try to read the initial status of the boiler
@@ -128,7 +127,7 @@ void loop ()
     } else if (cmdFlag) {
         cmdFlag = false;
 
-        esp->handleCommands();
+        esp->handleCommands(state);
 
     } else if (keepaliveFlag) {
         keepaliveFlag = false;
@@ -144,7 +143,8 @@ void loop ()
 
         state->temperature = thermometer->getTemperature();        
 
-    } else if (pidFlag) {
+    } 
+    else if (pidFlag) {
         pidFlag = false;
 
         boilerTemperature = pid->computeStep(state->temperature);

@@ -9,10 +9,8 @@ clientSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # This is reg
 clientSocket.connect(('localhost', 9999))
 
 def setpoint(raw):
-    print(raw)
     try:
         setpoint = scanf('s %f', raw)[0]
-        print(setpoint)
     except:
         print('invalid setpoint command: %s' % raw)
     else:

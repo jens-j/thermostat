@@ -4,11 +4,13 @@
 #include "esp.h"
 #include "pid.h"
 
-Esp::Esp(int rx, int tx)
+Esp::Esp(int rx, int tx, Pid *pid)
 {
     // set arduino pin directions
     pinMode(rx, INPUT);
     pinMode(tx, OUTPUT);
+
+    pid_ = pid;
 
     // setup the serial interface with the esp
     esp_ = new SoftwareSerial(rx, tx);
@@ -25,16 +27,16 @@ void Esp::initialize ()
     delay(50);
     sprintf(buf, "AT+CIPSTART=\"TCP\",\"%s\",%d\r\n", SERVER_IP, SERVER_PORT);
     esp_->write(buf);  // connect to the server
-    // delay(1000);
-    // esp_->write("AT+CIPMODE=1\r\n"); // set to unvarnished transmission mode
-    // delay(1000);
-    // esp_->write("AT+CIPSEND\r\n"); // start sending data
+    delay(50);
+    esp_->write("AT+CIPMODE=1\r\n"); // set to transparent transmission mode
+    delay(50);
+    esp_->write("AT+CIPSEND\r\n"); // start sending data
 }
 
-void Esp::logState (state_t *update)
+void Esp::logState (state_t *state)
 {
     esp_->write((uint8_t) STATE_LOG);
-    esp_->write((uint8_t*) update, sizeof(state_t));
+    esp_->write((uint8_t*) state, sizeof(state_t));
 }
 
 void Esp::printReply ()
@@ -45,16 +47,38 @@ void Esp::printReply ()
     }
 }
 
-void Esp::handleCommands () 
+void Esp::handleCommands (state_t *state) 
 {
-    while (Serial.available()) {
-        Serial.println(esp_->read());
-    }
+    int i;
+    char buffer[64];
+    int recvCount = esp_->readBytes(buffer, 64);
 
-    // String cmd = "";
-    //cmd = Serial.readString();
-    // if (cmd != "") {
-    //     Serial.print("cmd: ");
-    //     Serial.println(cmd);
-    // }
+    if (recvCount > 0) {
+
+        switch (buffer[0]) {
+
+            case SETPOINT_CMD:
+                if (recvCount != 1 + sizeof(setpoint_cmd_t)) {
+                    Serial.print(F("(esp) invalid setpoint command "));
+                    Serial.println(recvCount);
+                } else {
+                    float *setpoint;
+                    setpoint = (float*) &(buffer[1]);
+                    Serial.print(F("(esp) setpoint command: "));
+                    Serial.println(*setpoint, 5);
+                    pid_->changeSetpoint(*setpoint);
+                    state->pid.setpoint = *setpoint;
+                }
+                break;
+
+            case PID_COEFFS_CMD:
+                Serial.println(F("(esp) pid coefficients command"));
+
+                break;
+
+            default:
+                Serial.print(F("(esp) unknown command: "));
+                Serial.println(buffer[0]);
+        }
+    }
 }

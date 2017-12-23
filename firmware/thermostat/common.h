@@ -35,7 +35,7 @@
 #define T_TICK              2 // [ms] needs to be low because it also defines the pwm frequency
 
 // update periods in multiples of the system tick
-#define M_UIO               10    // (20 ms)  buttons sample and lcd update frequency 
+#define M_UIO               500    // (20 ms)  buttons sample and lcd update frequency 
 #define M_TEMPERATURE       50    // (100 ms) temperature reading
 #define M_KEEPALIVE         500   // (1 s)    minimal opentherm message frequency
 #define M_CMD               500   // (1 s)    esp cmd poll

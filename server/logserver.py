@@ -31,20 +31,22 @@ def server(name, port, threadFunction):
 
 def cmdThread(clientSocket):
 
-    # try to receive from the client
-    try:
-        recvBuffer = clientSocket.recv(256)
-    except Exception as e:
-        print('(cmd) socket receive error: %s' % str(e))
-    if not recvBuffer:
-        print('(cmd) client closed connection')
-        clientSocket.close();
-        return
+    while True:
 
-    print('(cmd) received %d bytes' % len(recvBuffer))
-    print('(cmd) received: %s' % recvBuffer)
+        # try to receive from the client
+        try:
+            recvBuffer = clientSocket.recv(256)
+        except Exception as e:
+            print('(cmd) socket receive error: %s' % str(e))
+        if not recvBuffer:
+            print('(cmd) client closed connection')
+            clientSocket.close();
+            return
 
-    cmdQueue.append(recvBuffer)
+        print('(cmd) received %d bytes' % len(recvBuffer))
+        print('(cmd) received: %s' % recvBuffer)
+
+        cmdQueue.append(recvBuffer)
 
 
 def espThread(clientSocket):
@@ -59,7 +61,7 @@ def espThread(clientSocket):
             try:
                 msg = cmdQueue.popleft()
             except IndexError:
-                print('(esp) cmd queue empty')
+                #print('(esp) cmd queue empty')
                 break
             else:
                 print('(esp) send: %s' % msg)
@@ -69,7 +71,7 @@ def espThread(clientSocket):
         try:
             recvBuffer = clientSocket.recv(256)
         except socket.timeout:
-            print('(esp) receive timeout')
+            #print('(esp) receive timeout')
             continue
         else:
             if not recvBuffer:

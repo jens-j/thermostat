@@ -21,6 +21,8 @@ void loop() {
   while (esp.available()) {
     Serial.write(esp.read());
   }
+
+  delay(2000);
   
   while (Serial.available()) {
     esp.write(Serial.read());

@@ -12,6 +12,7 @@ Pid::Pid (float kP,
           float outputMin,
           float outputMax)
 {
+    Serial.println("pid init");
     changeCoefficients(kP, kI, kD);
     iMax_ = iMax;
     prevInput_ = input;
