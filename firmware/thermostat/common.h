@@ -38,7 +38,8 @@
 #define M_UIO               10    // (20 ms)  buttons sample and lcd update frequency 
 #define M_TEMPERATURE       50    // (100 ms) temperature reading
 #define M_KEEPALIVE         500   // (1 s)    minimal opentherm message frequency
-#define M_PID               2500  // (5 s)    control loop update frequency
+#define M_CMD               500   // (1 s)    esp cmd poll
+#define M_PID               1000  // (2 s)    control loop update frequency
 
 // pid coefficients
 #define PID_P               20  
@@ -65,7 +66,8 @@ int freeRam ();
 
 // esp communication message types
 // log: arduino -> server
-// cmd: server -> aarduino
+// cmd: server -> arduino
+// 8 bits wide when used as message header
 enum esp_msg_t {STATE_LOG      = 0,
                 SETPOINT_CMD   = 1,
                 PID_COEFFS_CMD = 2};

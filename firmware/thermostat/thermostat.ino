@@ -19,11 +19,13 @@ UserIo *userIo;
 // isr global variables
 int uioCount = 0;
 int tempCount = 0;
+int cmdCount = 0;
 int pidCount = 0;
 
 // isr <-> main loop communication variables
 volatile bool uioFlag = false;
 volatile bool tempFlag = false;
+volatile bool cmdFlag = false;
 volatile bool keepaliveFlag = false;
 volatile bool pidFlag = false;
 
@@ -40,6 +42,10 @@ void TIMER1_ISR ()
     if (++tempCount >= M_TEMPERATURE) {
         tempCount = 0;
         tempFlag = true;
+    }
+    if (++cmdCount >= M_CMD) {
+        cmdCount = 0;
+        cmdFlag = true;
     }
     if (heater->ot->checkKeepAlive() >= M_KEEPALIVE) {
         heater->ot->resetKeepAlive();
@@ -58,7 +64,7 @@ void setup ()
     uint8_t heaterStatus;
     bool success = false;
 
-    delay(1000);
+    //delay(2000);
 
     Serial.begin(115200);
     Serial.println("init");
@@ -118,6 +124,11 @@ void loop ()
         tempFlag = false;
 
         thermometer->update();
+
+    } else if (cmdFlag) {
+        cmdFlag = false;
+
+        esp->handleCommands();
 
     } else if (keepaliveFlag) {
         keepaliveFlag = false;

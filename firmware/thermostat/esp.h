@@ -2,6 +2,7 @@
 #define ESP_H
 
 #include <SoftwareSerial.h>
+#include "pid.h"
 
 class Esp {
 
@@ -15,12 +16,14 @@ public:
 
     void logState (state_t *update);
     void printReply ();
+    void handleCommands ();
+
 
     SoftwareSerial *esp_; // serial interface to the ESP-1 module
 
 private:
 
-    
+    Pid *pid_;
 
 };
 
