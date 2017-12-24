@@ -19,6 +19,7 @@ Pid::Pid (float kP,
     setpoint_ = setpoint;
     outputMin_ = outputMin;
     outputMax_ = outputMax;
+    prevOutput_ = outputMin_;
 
     timestamp_ = millis();
     iTerm_ = 0.0;

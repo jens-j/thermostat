@@ -73,7 +73,7 @@ void setup ()
     //delay(2000);
 
     Serial.begin(115200);
-    Serial.println("init");
+    Serial.println(F("init"));
 
     // set up the timer1 interrupt (needed for lcb backlight pwm)
     Timer1.initialize(T_TICK * 1E3);
@@ -85,7 +85,7 @@ void setup ()
                   PID_D,
                   PID_IMAX,
                   thermometer->getTemperature(),  // initial input
-                  21, // setpoint
+                  20, // setpoint
                   PID_MIN_OUTPUT, 
                   PID_MAX_OUTPUT);
     userIo = new UserIo(pid);
@@ -104,7 +104,7 @@ void setup ()
     //     delay(1000);
     // }
 
-    Serial.println("start\n");
+    Serial.println(F("start\n"));
     Timer1.attachInterrupt(TIMER1_ISR);
 
     keepaliveFlag = true;
@@ -128,42 +128,47 @@ void loop ()
     } else if (tempReadFlag) {
         tempReadFlag = false;
 
+        // take a thermometer reading and update the average
         thermometer->update();
 
     } else if (tempDispFlag) {
         tempDispFlag = false;
+
+        // update the temperature display
         state->temperature = thermometer->getTemperature();    
 
     } else if (cmdFlag) {
         cmdFlag = false;
 
+        // poll messages and handle any commands
         esp->handleCommands(state);
 
     } else if (keepaliveFlag) {
         keepaliveFlag = false;
 
-        // // read the heater status
-        // success = heater->getSetStatus(&state.heater_status);
-        // if (success) {
-        //     sprintf(cBuf, "status: 0x%x", state.heater_status);
-        //     Serial.println(cBuf);
-        // } else {
-        //     Serial.println("read error");
-        // }
+        // read the heater status
+        success = heater->getSetStatus(&state->heater_status);
+        if (success) {
+            Serial.print(F("status: 0x"));
+            Serial.println(state->heater_status, HEX);
+        } else {
+            Serial.println(F("read error"));
+        }
     } 
     else if (pidFlag) {
         pidFlag = false;
 
+        // performa a pid update
         boilerTemperature = pid->computeStep(state->temperature);
 
-        // success = heater->setTemperature(boilerTemperature);
-        // if (!success) {
-        //     Serial.println("write error");
-        // }
+        // write water temperature to the heater
+        success = heater->setTemperature(boilerTemperature);
+        if (!success) {
+            Serial.println(F("write error"));
+        }
 
         // log the state to the server
         pid->getState(&(state->pid));
         esp->logState(state);
-
     }
 }

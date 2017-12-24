@@ -3,6 +3,7 @@
 #include "TimerOne.h"
 #include "common.h"
 #include "pid.h"
+#include "opentherm.h"
 #include "userio.h"
 
 UserIo::UserIo (Pid *pid)
@@ -14,8 +15,8 @@ UserIo::UserIo (Pid *pid)
     pinMode(LCD_BACKLIGHT_PIN, OUTPUT);
     Timer1.pwm(LCD_BACKLIGHT_PIN, 256);
     lcd_ = new LiquidCrystal(LCD_RS_PIN, LCD_ENABLE_PIN, LCD_DB4_PIN, LCD_DB5_PIN, LCD_DB6_PIN, LCD_DB7_PIN);
-    lcd_->createChar(0, upArrow);
     lcd_->begin(16, 2);
+    lcd_->createChar(0, upArrow);
 }
 
 void UserIo::update (state_t *state)
@@ -77,8 +78,8 @@ void UserIo::printMenu (state_t *state)
             lcd_->print(F("] C"));
 
             lcd_->setCursor(0, 1);
-            if (state->heater_status) {
-                lcd_->print(0);
+            if (state->heater_status & STATUS_FLAME) {
+                lcd_->write((unsigned char) 0);
             } else {
                 lcd_->write(' ');
             }

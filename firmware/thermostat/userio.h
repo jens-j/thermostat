@@ -37,6 +37,8 @@ class UserIo
 
 public:
 
+    LiquidCrystal *lcd_;
+
     // constructor
     UserIo (Pid *pid);
 
@@ -51,7 +53,7 @@ public:
 private:
 
     Pid *pid_;
-    LiquidCrystal *lcd_;
+    
     menu_state_t menuState_;
     button_state_t prevButtonState_;
     float setpoint_;

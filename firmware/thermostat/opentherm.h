@@ -32,6 +32,11 @@
 #define ID_OT_VERSION_SLAVE         125 // not supported
 #define ID_SLAVE_VERSION            127 // not supported
 
+#define STATUS_FAULT                0x01
+#define STATUS_CH                   0x02
+#define STATUS_DHW                  0x04
+#define STATUS_FLAME                0x08
+
 // opentherm timing constants
 #define T_SLAVE_RESP                800  // [ms]
 #define T_MASTER_IDLE               100  // [ms]
