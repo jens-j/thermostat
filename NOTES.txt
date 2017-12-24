@@ -12,3 +12,5 @@
 - when a receive error is encountered, the receive function should keep trying to receive for the duration of the response time.
 
 - fix logging format and log heater state
+
+- shut of CH if t > ts - 0.5

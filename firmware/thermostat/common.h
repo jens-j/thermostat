@@ -86,11 +86,12 @@ typedef struct pid_state_s {
     float kD;
 } pid_state_t;
 
-// pid step update log message structure
+// state update log message structure
 typedef struct state_s {
     pid_state_t pid;
     uint8_t heater_status;
-    float temperature;
+    float heater_temperature;
+    float room_temperature;
 } state_t;
 
 // system setpoint update message

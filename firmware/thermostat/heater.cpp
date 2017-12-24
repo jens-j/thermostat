@@ -10,18 +10,29 @@ Heater::Heater (int openthermIn, int openthermOut)
     // getSetStatus(&status);
 }
 
+bool Heater::getTemperature (float *temperature)
+{
+    bool success;
+    uint16_t readValue;
+
+    success = ot->getRegister(ID_BOILER_WATER_TEMP, &readValue);
+    *temperature = (float) (readValue) / 256.0;
+
+    return success;
+}
+
 bool Heater::setTemperature (float setpoint)
 {
-	uint16_t dataValue = (uint16_t) (setpoint * 256); // the temperature is converted to a 8.8 fixed point
+    uint16_t dataValue = (uint16_t) (setpoint * 256); // the temperature is converted to a 8.8 fixed point
 
     return ot->setRegister(ID_CONTROL_SETPOINT, dataValue);
 }
 
 bool Heater::getSetStatus (uint8_t *slaveStatus) 
 {   
-	bool success;
+    bool success;
     uint16_t readValue;
-    uint16_t writeValue = 0x0300; // enable CH and DHW
+    uint16_t writeValue = 0x0000; // enable CH and DHW
 
     success = ot->getRegister(ID_STATUS, &readValue, writeValue=writeValue);
     *slaveStatus = (uint8_t) readValue;

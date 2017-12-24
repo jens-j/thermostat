@@ -92,18 +92,6 @@ void setup ()
     esp = new Esp(ESP_RX_PIN, ESP_TX_PIN, pid);
     esp->initialize();
 
-    // // try to read the initial status of the boiler
-    // while (!success) {
-    //     success = heater->getSetStatus(&heaterStatus);
-    //     if (success) {
-    //         sprintf(cBuf, "status: 0x%x", heaterStatus);
-    //         Serial.println(cBuf);
-    //     } else {
-    //         Serial.println("could not read heater status");
-    //     }
-    //     delay(1000);
-    // }
-
     Serial.println(F("start\n"));
     Timer1.attachInterrupt(TIMER1_ISR);
 
@@ -124,7 +112,6 @@ void loop ()
         // read the buttons and update the lcd
         userIo->update(state);
 
-
     } else if (tempReadFlag) {
         tempReadFlag = false;
 
@@ -135,7 +122,7 @@ void loop ()
         tempDispFlag = false;
 
         // update the temperature display
-        state->temperature = thermometer->getTemperature();    
+        state->room_temperature = thermometer->getTemperature();    
 
     } else if (cmdFlag) {
         cmdFlag = false;
@@ -154,12 +141,18 @@ void loop ()
         } else {
             Serial.println(F("read error"));
         }
+
+        // read heater water temperature
+        success = heater->getTemperature(&state->heater_temperature);
+        if (!success) {
+            Serial.println(F("read error"));
+        }
     } 
     else if (pidFlag) {
         pidFlag = false;
 
         // performa a pid update
-        boilerTemperature = pid->computeStep(state->temperature);
+        boilerTemperature = pid->computeStep(state->room_temperature);
 
         // write water temperature to the heater
         success = heater->setTemperature(boilerTemperature);

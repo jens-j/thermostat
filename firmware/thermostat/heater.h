@@ -11,6 +11,8 @@ public:
     Heater (int openthermIn,
             int openthermOut);
 
+    bool getTemperature (float *temperature);
+
     // set the heating system water temperature
     bool setTemperature (float temperature);
 

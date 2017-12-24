@@ -84,8 +84,9 @@ def espThread(clientSocket):
 
             # parse the received message
             try:
-                msgType, input, output, setPoint, iTerm, kP, kI, kD, heater_status, temperature = \
-                    struct.unpack('<BfffffffBf', recvBuffer[-34:])
+                msgType, input, output, setPoint, iTerm, kP, kI, kD, \
+                heater_status, room_temperature, heater_temperature = \
+                    struct.unpack('<BfffffffBf', recvBuffer[-38:])
             except Exception as e:
                 print('message parse error: %s' % str(type(e)))
             else:
@@ -96,7 +97,7 @@ def espThread(clientSocket):
                 else:
                     dateTime = datetime.now().strftime('%d-%m-%y_%H:%M:%S')
                     s = '%s, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, 0x%02x\n' \
-                        % (dateTime, input, output, setPoint, iTerm, 
+                        % (dateTime, input, setPoint, output, heater_temperature iTerm, 
                            kP, kI, kD, heater_status)
 
                     print(s)
@@ -107,7 +108,7 @@ def espThread(clientSocket):
 # the log file spans the lifetime of the logserver
 t0 = datetime.now().strftime('%d-%m-%y_%H:%M:%S')
 with open('../log/temperature_%s.log' % t0, 'a') as f:
-    f.write('# timestamp, Ti, To, Ts, iTerm, kP, kI, kD, heater status\n')
+    f.write('# timestamp, Ti, Ts, To, Th, iTerm, kP, kI, kD, heater status\n')
 
 espSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 cmdSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -70,7 +70,7 @@ void UserIo::printMenu (state_t *state)
         case MENU_FRONT:
             lcd_->setCursor(0, 0);
             lcd_->print(F(" "));
-            dtostrf(state->temperature, 5, 2, cBuf);
+            dtostrf(state->room_temperature, 5, 2, cBuf);
             lcd_->print(cBuf);
             lcd_->print(F(" ["));
             dtostrf(state->pid.setpoint, 5, 2, cBuf);
@@ -83,7 +83,7 @@ void UserIo::printMenu (state_t *state)
             } else {
                 lcd_->write(' ');
             }
-            dtostrf(0.0, 5, 2, cBuf);
+            dtostrf(state->heater_temperature, 5, 2, cBuf);
             lcd_->print(cBuf);
             lcd_->print(F(" ["));
             dtostrf(state->pid.output, 5, 2, cBuf);
