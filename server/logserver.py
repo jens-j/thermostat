@@ -85,8 +85,8 @@ def espThread(clientSocket):
             # parse the received message
             try:
                 msgType, input, output, setPoint, iTerm, kP, kI, kD, \
-                heater_status, room_temperature, heater_temperature = \
-                    struct.unpack('<BfffffffBf', recvBuffer[-38:])
+                heater_status, heater_temperature, room_temperature = \
+                    struct.unpack('<BfffffffBff', recvBuffer[-38:])
             except Exception as e:
                 print('message parse error: %s' % str(type(e)))
             else:
@@ -96,7 +96,7 @@ def espThread(clientSocket):
                 # unpack, print and log the message
                 else:
                     dateTime = datetime.now().strftime('%d-%m-%y_%H:%M:%S')
-                    s = '%s, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, 0x%02x\n' \
+                    s = '%s, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, 0x%02x\n' \
                         % (dateTime, input, setPoint, output, heater_temperature, iTerm, 
                            kP, kI, kD, heater_status)
 
