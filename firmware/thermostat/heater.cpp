@@ -28,11 +28,11 @@ bool Heater::setTemperature (float setpoint)
     return ot->setRegister(ID_CONTROL_SETPOINT, dataValue);
 }
 
-bool Heater::getSetStatus (uint8_t *slaveStatus) 
+bool Heater::getSetStatus (uint8_t *slaveStatus, uint8_t masterStatus) 
 {   
     bool success;
     uint16_t readValue;
-    uint16_t writeValue = 0x0000; // enable CH and DHW
+    uint16_t writeValue = ((uint16_t) masterStatus) << 8;
 
     success = ot->getRegister(ID_STATUS, &readValue, writeValue=writeValue);
     *slaveStatus = (uint8_t) readValue;

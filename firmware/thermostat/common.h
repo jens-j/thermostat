@@ -27,7 +27,7 @@
 #define TMP_C_IIR           0.02 // moving average coefficient
 
 // server address
-#define SERVER_IP           "192.168.2.3"
+#define SERVER_IP           "192.168.2.2"
 #define CLIENT_IP           "192.168.2.1"
 #define SERVER_PORT         8888
 
@@ -49,6 +49,9 @@
 #define PID_IMAX            100
 #define PID_MIN_OUTPUT      10
 #define PID_MAX_OUTPUT      90
+
+// other temperature control parameters
+#define CTRL_HYSTERESIS     1 // [C] heater is enabled if themperature drop this much below the setpoint
 
 
 /////////////////////////////////////////////////

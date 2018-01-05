@@ -14,3 +14,7 @@
 - fix logging format and log heater state
 
 - shut of CH if t > ts - 0.5
+
+- cant shut of CH
+
+- ot error when esp command

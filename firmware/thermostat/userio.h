@@ -17,6 +17,17 @@ static byte upArrow[8] = {
   0b00000
 };
 
+static byte degreeSign[8] = {
+  0b00110,
+  0b01001,
+  0b01001,
+  0b00110,
+  0b00000,
+  0b00000,
+  0b00000,
+  0b00000
+};
+
 enum button_state_t {
     BTN_RIGHT,
     BTN_UP,

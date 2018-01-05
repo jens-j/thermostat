@@ -33,6 +33,7 @@ volatile bool pidFlag = false;
 
 // main loop global variables
 state_t *state = new state_t();
+uint8_t masterState = 0x02; // DHW always enabled
 
 // increase counters and check if task should be scheduled
 void TIMER1_ISR ()
@@ -104,7 +105,7 @@ void loop ()
     // char cBuf[80];
     bool success;
     float roomTemperature;
-    float boilerTemperature;
+    float heaterSetpoint;
     
     if (uioFlag) {
         uioFlag = false;
@@ -134,7 +135,7 @@ void loop ()
         keepaliveFlag = false;
 
         // read the heater status
-        success = heater->getSetStatus(&state->heater_status);
+        success = heater->getSetStatus(&state->heater_status, masterState=masterState);
         if (success) {
             Serial.print(F("status: 0x"));
             Serial.println(state->heater_status, HEX);
@@ -151,11 +152,19 @@ void loop ()
     else if (pidFlag) {
         pidFlag = false;
 
-        // performa a pid update
-        boilerTemperature = pid->computeStep(state->room_temperature);
+        // perform a pid update
+        float temp = pid->computeStep(state->room_temperature);
+        heaterSetpoint = ROUND(temp);
+
+        // enable CH if the heater setpoint is higher than the heater temperature
+        if (state->heater_temperature <= heaterSetpoint - CTRL_HYSTERESIS) {
+            masterState = 0x3; // CH and DHW enabled
+        } else {
+            masterState = 0x2; // DHW enabled
+        }
 
         // write water temperature to the heater
-        success = heater->setTemperature(boilerTemperature);
+        success = heater->setTemperature(heaterSetpoint);
         if (!success) {
             Serial.println(F("write error"));
         }

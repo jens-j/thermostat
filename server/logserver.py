@@ -97,7 +97,7 @@ def espThread(clientSocket):
                 else:
                     dateTime = datetime.now().strftime('%d-%m-%y_%H:%M:%S')
                     s = '%s, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, 0x%02x\n' \
-                        % (dateTime, input, setPoint, output, heater_temperature iTerm, 
+                        % (dateTime, input, setPoint, output, heater_temperature, iTerm, 
                            kP, kI, kD, heater_status)
 
                     print(s)

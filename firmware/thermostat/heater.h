@@ -18,7 +18,7 @@ public:
 
     // set the master enable bits and read the slave status at the same time
     // The master status is fixed and the slave status is returned in slaveStatus
-    bool getSetStatus (uint8_t *slaveStatus);
+    bool getSetStatus (uint8_t *slaveStatus, uint8_t masterStatus=0x03);
 
     // opentherm master interface object pointer
     OpenTherm *ot;
