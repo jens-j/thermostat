@@ -51,24 +51,24 @@
 
 // opentherm message ids
 enum ot_msg_t {
-    READ_DATA,
-    WRITE_DATA,
-    INVALID_DATA,
-    RESERVED,
-    READ_ACK,
-    WRITE_ACK,
-    DATA_INVALID,
-    UNKNOWN_DATA_ID
+    READ_DATA       = 0,
+    WRITE_DATA      = 1,
+    INVALID_DATA    = 2,
+    RESERVED        = 3,
+    READ_ACK        = 4,
+    WRITE_ACK       = 5,
+    DATA_INVALID    = 6,
+    UNKNOWN_DATA_ID = 7
 };
 
 // receive error codes
 enum ot_recv_error_t {
-    OT_RECV_ERR_NONE,
-    OT_RECV_ERR_FIRST_EDGE, // first edge has wrong direction
-    OT_RECV_ERR_EDGE_EARLY, // edge arrived too early for specifications
-    OT_RECV_ERR_EDGE_LATE,  // edge arrived too late for specifications
-    OT_RECV_ERR_INCOMPLETE, // inclomplete message received (wdt timeout without other errors occurring)
-    OT_RECV_ERR_TIMEOUT     // nothing received before the 800 ms response time elapsed
+    OT_RECV_ERR_NONE        = 0,
+    OT_RECV_ERR_FIRST_EDGE  = 1, // first edge has wrong direction
+    OT_RECV_ERR_EDGE_EARLY  = 2, // edge arrived too early for specifications
+    OT_RECV_ERR_EDGE_LATE   = 3, // edge arrived too late for specifications
+    OT_RECV_ERR_INCOMPLETE  = 4, // inclomplete message received (wdt timeout without other errors occurring)
+    OT_RECV_ERR_TIMEOUT     = 5  // nothing received before the 800 ms response time elapsed
 };
 
 // opentherm 32 bit message structure
@@ -78,6 +78,19 @@ typedef struct message_s {
     uint8_t     dataId;
     uint16_t    dataValue;
 } message_t;
+
+// log an opentherm receive error
+typedef struct recv_error_s {
+    uint8_t errorFlags;
+    uint8_t dataId;
+} recv_error_t;
+
+// log an opentherm parse error
+typedef struct parse_error_s {
+    uint8_t errorType;
+    uint8_t dataId;
+    message_t message;
+} parse_error_t;
 
 // message id strings for printings
 const char OT_MSG_T_STR[8][16] = {
@@ -111,12 +124,15 @@ public:
     OpenTherm (int inPin,
                int outPin);
 
-    // write a register, return true if succesfull
-    bool setRegister (uint8_t dataId, uint16_t dataValue);
+    // write a register, returns error codes
+    bool setRegister (uint8_t dataId, uint16_t dataValue, 
+                      recv_error_t *recvError, parse_error_t *parseError);
 
-    // read a register, return true if succesful. The data is returned in readValue. 
-    // Writevalue can be used to specify the data field in the read request
-    bool getRegister (uint8_t dataId, uint16_t *readValue, uint16_t writeValue=0);
+    // read a register, returns error codes. The response type and data are returned in 
+    // msgType and readValue. Writevalue can be used to specify the data field in the read 
+    // request
+    bool getRegister (uint8_t dataId, uint16_t *readValue, recv_error_t *recvError, 
+                      parse_error_t *parseError, uint16_t writeValue=0);
 
     // send a frame over the opentherm interface
     void sendFrame (int msgType, uint8_t dataId, uint16_t dataValue);

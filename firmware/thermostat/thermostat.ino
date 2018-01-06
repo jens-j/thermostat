@@ -71,8 +71,6 @@ void setup ()
     uint8_t heaterStatus;
     bool success = false;
 
-    //delay(2000);
-
     Serial.begin(115200);
     Serial.println(F("init"));
 
@@ -106,6 +104,10 @@ void loop ()
     bool success;
     float roomTemperature;
     float heaterSetpoint;
+    float heaterTemperature;
+    uint8_t heaterStatus;
+    recv_error_t recvError;
+    parse_error_t parseError;
     
     if (uioFlag) {
         uioFlag = false;
@@ -123,7 +125,7 @@ void loop ()
         tempDispFlag = false;
 
         // update the temperature display
-        state->room_temperature = thermometer->getTemperature();    
+        state->roomTemperature = thermometer->getTemperature();    
 
     } else if (cmdFlag) {
         cmdFlag = false;
@@ -135,37 +137,39 @@ void loop ()
         keepaliveFlag = false;
 
         // read the heater status
-        success = heater->getSetStatus(&state->heater_status, masterState=masterState);
-        if (success) {
-            Serial.print(F("status: 0x"));
-            Serial.println(state->heater_status, HEX);
+        state->otError = !heater->getSetStatusVerbose(
+            &heaterStatus, &recvError, &parseError, masterState=masterState);
+        if (state->otError) {
+            esp->logOtError(&recvError, &parseError);
         } else {
-            Serial.println(F("read error"));
+            state->heaterStatus = heaterStatus;
         }
 
         // read heater water temperature
-        success = heater->getTemperature(&state->heater_temperature);
-        if (!success) {
-            Serial.println(F("read error"));
+        state->otError = !heater->getTemperatureVerbose(&heaterTemperature, &recvError, &parseError);
+        if (state->otError) {
+            esp->logOtError(&recvError, &parseError);
+        } else {
+            state->heaterTemperature = heaterTemperature;
         }
     } 
     else if (pidFlag) {
         pidFlag = false;
 
         // perform a pid update
-        heaterSetpoint = ROUND(pid->computeStep(state->room_temperature));
+        heaterSetpoint = ROUND(pid->computeStep(state->roomTemperature));
 
         // enable CH if the heater setpoint is higher than the heater temperature
-        if (state->heater_temperature <= heaterSetpoint - CTRL_HYSTERESIS) {
+        if (state->heaterTemperature <= heaterSetpoint - CTRL_HYSTERESIS) {
             masterState = 0x3; // CH and DHW enabled
         } else {
             masterState = 0x2; // DHW enabled
         }
 
         // write water temperature to the heater
-        success = heater->setTemperature(heaterSetpoint);
-        if (!success) {
-            Serial.println(F("write error"));
+        state->otError = !heater->setTemperatureVerbose(heaterSetpoint, &recvError, &parseError);
+        if (state->otError) {
+            esp->logOtError(&recvError, &parseError);
         }
 
         // log the state to the server

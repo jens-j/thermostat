@@ -39,10 +39,47 @@ static byte degreeCelsiusSymbol[8] = {
     0b00110
 };
 
+static byte emptySymbol[8] = {
+    0b00000,
+    0b00000,
+    0b00000,
+    0b00000,
+    0b00000,
+    0b00000,
+    0b00000,
+    0b00000
+};
+
+static byte singleExclamation[8] = {
+    0b00000,
+    0b00100,
+    0b00100,
+    0b00100,
+    0b00100,
+    0b00000,
+    0b00100,
+    0b00000
+};
+
+static byte doubleExclamation[8] = {
+    0b00000,
+    0b01010,
+    0b01010,
+    0b01010,
+    0b01010,
+    0b00000,
+    0b01010,
+    0b00000
+};
+
+
 enum symbol_t {
     SYMBOL_UPARROW,
     SYMBOL_DEGREE,
-    SYMBOL_DEGREECELSIUS
+    SYMBOL_DEGREECELSIUS,
+    SYMBOL_EMPTY,
+    SYMBOL_SINGLEEXCLAMATION,
+    SYMBOL_DOUBLEEXCLAMATION
 };
 
 enum button_state_t {
@@ -73,9 +110,13 @@ public:
     // read the buttons and update the lcd
     void update (state_t *state);
 
-    button_state_t getButtonState (); 
+    // check which button in now pressed
+    button_state_t getButtonState ();
+
+    // check if a button edge occured since last call
     button_state_t getButtonEdge (); 
 
+    // print the thermometer menu
     void printMenu (state_t *state); 
 
 private:
@@ -86,6 +127,8 @@ private:
     button_state_t prevButtonState_;
     float setpoint_;
     state_t prevState_;
+    symbol_t errorIndicator_;
+    bool errorSticky_;
 
 };
 

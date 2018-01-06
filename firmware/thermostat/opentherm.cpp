@@ -54,61 +54,56 @@ OpenTherm::OpenTherm(int inPin, int outPin) {
     WDTCSR = (1 << WDP0); // 64 ms
 }
 
-bool OpenTherm::setRegister(uint8_t dataId, uint16_t dataValue) 
+bool OpenTherm::setRegister(uint8_t dataId, uint16_t dataValue, 
+                            recv_error_t *recvError, parse_error_t *parseError)
 {
     uint64_t frameBuf;
     message_t message;
-    ot_recv_error_t recvError;
-    uint8_t parseError;
     int recvCount;
 
     sendFrame(WRITE_DATA, dataId, dataValue);
-    recvError = recvReply(&frameBuf, &recvCount);
-    parseError = parseFrame(frameBuf, &message);
 
-    if (recvError != OT_RECV_ERR_NONE) {
-        Serial.println('a');
-        Serial.println(recvError);
+    recvError->errorFlags = recvReply(&frameBuf, &recvCount);
+    recvError->dataId = dataId;
+    parseError->errorType = parseFrame(frameBuf, &message);
+    parseError->dataId = parseFrame(frameBuf, &message);
+    parseError->message = message;
+
+    if (recvError->errorFlags != (uint8_t) OT_RECV_ERR_NONE) {
         return false;
-    } else if (parseError != 0) {
-        Serial.println('b');
-        Serial.println(parseError);
+    } else if (parseError->errorType != (uint8_t) OT_PARSE_ERR_NONE) {
         return false;
-    } else if (message.msgType != WRITE_ACK) {
-        Serial.println('c');
-        Serial.println(message.msgType);
+    } else if (message.msgType != (uint8_t) WRITE_ACK) {
         return false;
     }  else {
         return true;
     }
 }
 
-bool OpenTherm::getRegister(uint8_t dataId, uint16_t *readValue, uint16_t writeValue) 
+bool OpenTherm::getRegister(uint8_t dataId, uint16_t *readValue, recv_error_t *recvError, 
+                            parse_error_t *parseError, uint16_t writeValue) 
 {
     uint64_t frameBuf;
     message_t message;
-    ot_recv_error_t recvError;
-    uint8_t parseError;
     int recvCount;
 
     sendFrame(READ_DATA, dataId, writeValue);
-    recvError = recvReply(&frameBuf, &recvCount);
-    parseError = parseFrame(frameBuf, &message);
+
+    recvError->errorFlags = recvReply(&frameBuf, &recvCount);
+    recvError->dataId = dataId;
+    parseError->errorType = parseFrame(frameBuf, &message);
+    parseError->dataId = parseFrame(frameBuf, &message);
+    parseError->message = message;
+
     *readValue = message.dataValue;
 
-    if (recvError != OT_RECV_ERR_NONE) {
-        Serial.println('a');
-        Serial.println(recvError);
+    if (recvError->errorFlags != (uint8_t) OT_RECV_ERR_NONE) {
         return false;
-    } else if (parseError != 0) {
-        Serial.println('b');
-        Serial.println(parseError);
+    } else if (parseError->errorType != (uint8_t) OT_PARSE_ERR_NONE) {
         return false;
-    } else if (message.msgType != READ_ACK) {
-        Serial.println('c');
-        Serial.println(message.msgType);
+    } else if (message.msgType != (uint8_t) READ_ACK) {
         return false;
-    }  else {
+    } else {
         return true;
     }
 }

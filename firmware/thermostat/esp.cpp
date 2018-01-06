@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include "Arduino.h"
 #include "common.h"
+#include "opentherm.h"
 #include "esp.h"
 #include "pid.h"
 
@@ -37,6 +38,18 @@ void Esp::logState (state_t *state)
 {
     esp_->write((uint8_t) STATE_LOG);
     esp_->write((uint8_t*) state, sizeof(state_t));
+}
+
+void Esp::logOtError(recv_error_t *recvError, parse_error_t *parseError)
+{
+    if (recvError->errorFlags != OT_RECV_ERR_NONE) {
+        esp_->write((uint8_t) OT_RECV_ERROR_LOG);
+        esp_->write((uint8_t*) recvError, sizeof(recv_error_t));
+    }
+    if (parseError->errorType != OT_PARSE_ERR_NONE) {
+        esp_->write((uint8_t) OT_PARSE_ERROR_LOG);
+        esp_->write((uint8_t*) parseError, sizeof(parse_error_t));
+    }
 }
 
 void Esp::printReply ()

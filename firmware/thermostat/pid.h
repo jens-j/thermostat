@@ -35,7 +35,7 @@ private:
     float kI_;          // integral coefficient
     float kD_;          // derative coefficient
     float iMax_;        // maximum of the integral
-    float iTerm_;       // integral accumulator
+    float errorSum_;    // integral accumulator
     float setpoint_;    // system setpoint
     float prevInput_;   // last pid input
     float initInput_;   // input on startup

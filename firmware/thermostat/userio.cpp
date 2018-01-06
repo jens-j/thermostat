@@ -10,6 +10,8 @@ UserIo::UserIo (Pid *pid)
 {
     pid_ = pid;
     menuState_ = MENU_FRONT;
+    errorIndicator_ = SYMBOL_EMPTY;
+    errorSticky_ = false;
     prevButtonState_ = getButtonState();
     pinMode(BUTTONS_PIN, INPUT);
     pinMode(LCD_BACKLIGHT_PIN, OUTPUT);
@@ -19,7 +21,9 @@ UserIo::UserIo (Pid *pid)
     lcd_->createChar(SYMBOL_UPARROW, upArrow);
     lcd_->createChar(SYMBOL_DEGREE, degreeSymbol);
     lcd_->createChar(SYMBOL_DEGREECELSIUS, degreeCelsiusSymbol);
-
+    lcd_->createChar(SYMBOL_EMPTY, emptySymbol);
+    lcd_->createChar(SYMBOL_SINGLEEXCLAMATION, singleExclamation);
+    lcd_->createChar(SYMBOL_DOUBLEEXCLAMATION, doubleExclamation);
 }
 
 void UserIo::update (state_t *state)
@@ -30,6 +34,10 @@ void UserIo::update (state_t *state)
     bool change = false;
     menu_state_t newMenuState = menuState_;
     float prevSetpoint = setpoint_;
+    symbol_t prevErrorIndicator_ = errorIndicator_;
+
+    // update the ot error sticky bit and indicator
+    errorSticky_ = errorSticky_ || state->otError;
 
     // process button input
     switch (menuState_) {
@@ -52,7 +60,8 @@ void UserIo::update (state_t *state)
             }
     }
 
-    if (setpoint_ != prevSetpoint || newMenuState != menuState_ || 
+    if (setpoint_ != prevSetpoint || 
+            newMenuState != menuState_ || 
             memcmp(&prevState_, state, sizeof(state_t))) {
         change = true;
     }
@@ -69,11 +78,14 @@ void UserIo::printMenu (state_t *state)
 {
     char cBuf[10];
 
+    errorIndicator_ = state->otError ? SYMBOL_DOUBLEEXCLAMATION : 
+        (errorSticky_ ? SYMBOL_SINGLEEXCLAMATION : SYMBOL_EMPTY);
+
     switch (menuState_) {
         case MENU_FRONT:
             lcd_->setCursor(0, 0);
-            lcd_->print(F(" "));
-            dtostrf(state->room_temperature, 5, 2, cBuf);
+            lcd_->write((unsigned char) errorIndicator_);
+            dtostrf(state->roomTemperature, 5, 2, cBuf);
             lcd_->print(cBuf);
             lcd_->print(F(" ["));
             dtostrf(state->pid.setpoint, 4, 1, cBuf);
@@ -82,12 +94,12 @@ void UserIo::printMenu (state_t *state)
             lcd_->write((unsigned char) SYMBOL_DEGREECELSIUS);
             
             lcd_->setCursor(0, 1);
-            if (state->heater_status & STATUS_FLAME) {
+            if (state->heaterStatus & STATUS_FLAME) {
                 lcd_->write((unsigned char) SYMBOL_UPARROW);
             } else {
                 lcd_->write(' ');
             }
-            dtostrf(state->heater_temperature, 5, 2, cBuf);
+            dtostrf(state->heaterTemperature, 5, 2, cBuf);
             lcd_->print(cBuf);
             lcd_->print(F(" ["));
             dtostrf(ROUND(state->pid.output), 4, 1, cBuf);
@@ -107,7 +119,7 @@ void UserIo::printMenu (state_t *state)
     }
 }
 
-button_state_t UserIo::getButtonState () 
+button_state_t UserIo::getButtonState ()
 {
     //analogReference(DEFAULT);
     int value = analogRead(BUTTONS_PIN);
@@ -128,7 +140,7 @@ button_state_t UserIo::getButtonState ()
     }
 }
 
-button_state_t UserIo::getButtonEdge () 
+button_state_t UserIo::getButtonEdge ()
 {
     button_state_t buttonState = getButtonState();
 
@@ -140,4 +152,3 @@ button_state_t UserIo::getButtonEdge ()
         return buttonState;
     }
 }
-

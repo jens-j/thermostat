@@ -74,16 +74,18 @@ int freeRam ();
 // log: arduino -> server
 // cmd: server -> arduino
 // 8 bits wide when used as message header
-enum esp_msg_t {STATE_LOG      = 0,
-                SETPOINT_CMD   = 1,
-                PID_COEFFS_CMD = 2};
+enum esp_msg_t {STATE_LOG           = 0,
+                OT_RECV_ERROR_LOG   = 1,
+                OT_PARSE_ERROR_LOG  = 2,
+                SETPOINT_CMD        = 3,
+                PID_COEFFS_CMD      = 4};
 
 // pid step update log message structure
 typedef struct pid_state_s {
     float input;
     float output;
     float setpoint;
-    float iTerm;
+    float errorSum;
     float kP;
     float kI;
     float kD;
@@ -92,9 +94,10 @@ typedef struct pid_state_s {
 // state update log message structure
 typedef struct state_s {
     pid_state_t pid;
-    uint8_t heater_status;
-    float heater_temperature;
-    float room_temperature;
+    uint8_t heaterStatus;
+    float heaterTemperature;
+    float roomTemperature;
+    bool otError;
 } state_t;
 
 // system setpoint update message

@@ -22,7 +22,7 @@ Pid::Pid (float kP,
     prevOutput_ = outputMin_;
 
     timestamp_ = millis();
-    iTerm_ = 0.0;
+    errorSum_ = 0.0;
     prevOutput_ = 0;
 }
 
@@ -34,14 +34,14 @@ float Pid::computeStep (float input)
     float error = setpoint_ - input;
     float dInput = (input - prevInput_) / dt;
 
-    iTerm_ += kI_ * error * dt;
-    iTerm_ = constrain(iTerm_, 0, outputMax_);
+    errorSum_ += kI_ * error * dt;
+    errorSum_ = constrain(errorSum_, 0, outputMax_);
 
     // p on e & d on m
-    output = kP_ * error + iTerm_ - kD_ * dInput;  
+    output = kP_ * error + errorSum_ - kD_ * dInput;  
 
     // p on m & d on m
-    // float output = -kP_ * (input - initInput_) + iTerm_ - kD_ * dInput; // p on m & d on m
+    // float output = -kP_ * (input - initInput_) + errorSum_ - kD_ * dInput; // p on m & d on m
     
     // positive pid output should result in boiler water which is warmer than the room temerature
     output = output + input; 
@@ -70,7 +70,7 @@ void Pid::getState (pid_state_t *state)
     state->input = prevInput_;
     state->output = prevOutput_;
     state->setpoint = setpoint_;
-    state->iTerm = iTerm_;
+    state->errorSum = errorSum_;
     state->kP = kP_;
     state->kI = kI_;
     state->kD = kD_;
