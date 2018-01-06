@@ -7,25 +7,42 @@
 #include "pid.h"
 
 static byte upArrow[8] = {
-  0b00000,
-  0b00100,
-  0b01110,
-  0b11111,
-  0b01110,
-  0b01110,
-  0b01110,
-  0b00000
+    0b00000,
+    0b00100,
+    0b01110,
+    0b11111,
+    0b01110,
+    0b01110,
+    0b01110,
+    0b00000
 };
 
-static byte degreeSign[8] = {
-  0b00110,
-  0b01001,
-  0b01001,
-  0b00110,
-  0b00000,
-  0b00000,
-  0b00000,
-  0b00000
+static byte degreeSymbol[8] = {
+    0b00110,
+    0b01001,
+    0b01001,
+    0b00110,
+    0b00000,
+    0b00000,
+    0b00000,
+    0b00000
+};
+
+static byte degreeCelsiusSymbol[8] = {
+    0b10000,
+    0b00110,
+    0b01001,
+    0b01000,
+    0b01000,
+    0b01000,
+    0b01001,
+    0b00110
+};
+
+enum symbol_t {
+    SYMBOL_UPARROW,
+    SYMBOL_DEGREE,
+    SYMBOL_DEGREECELSIUS
 };
 
 enum button_state_t {

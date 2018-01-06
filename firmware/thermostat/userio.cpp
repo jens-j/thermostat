@@ -16,8 +16,10 @@ UserIo::UserIo (Pid *pid)
     Timer1.pwm(LCD_BACKLIGHT_PIN, 256);
     lcd_ = new LiquidCrystal(LCD_RS_PIN, LCD_ENABLE_PIN, LCD_DB4_PIN, LCD_DB5_PIN, LCD_DB6_PIN, LCD_DB7_PIN);
     lcd_->begin(16, 2);
-    lcd_->createChar(0, upArrow);
-    lcd_->createChar(1, degreeSign);
+    lcd_->createChar(SYMBOL_UPARROW, upArrow);
+    lcd_->createChar(SYMBOL_DEGREE, degreeSymbol);
+    lcd_->createChar(SYMBOL_DEGREECELSIUS, degreeCelsiusSymbol);
+
 }
 
 void UserIo::update (state_t *state)
@@ -76,13 +78,12 @@ void UserIo::printMenu (state_t *state)
             lcd_->print(F(" ["));
             dtostrf(state->pid.setpoint, 4, 1, cBuf);
             lcd_->print(cBuf);
-            lcd_->print(F("]"));
-            lcd_->write((unsigned char) 1);
-            lcd_->print(F("C"));
-
+            lcd_->print(F("] "));
+            lcd_->write((unsigned char) SYMBOL_DEGREECELSIUS);
+            
             lcd_->setCursor(0, 1);
             if (state->heater_status & STATUS_FLAME) {
-                lcd_->write((unsigned char) 0);
+                lcd_->write((unsigned char) SYMBOL_UPARROW);
             } else {
                 lcd_->write(' ');
             }
@@ -91,9 +92,8 @@ void UserIo::printMenu (state_t *state)
             lcd_->print(F(" ["));
             dtostrf(ROUND(state->pid.output), 4, 1, cBuf);
             lcd_->print(cBuf);
-            lcd_->print(F("]"));
-            lcd_->write((unsigned char) 1);
-            lcd_->print(F("C"));
+            lcd_->print(F("] "));
+            lcd_->write((unsigned char) SYMBOL_DEGREECELSIUS);
             break;
 
         case MENU_SETPOINT:
