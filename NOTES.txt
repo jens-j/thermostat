@@ -14,3 +14,7 @@
 - only update iTerm in the proportional band
 
 - display and log communication errors 
+
+- dont store data when a communication error occurred
+
+- change iTerm -> error sum
