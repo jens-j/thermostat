@@ -157,7 +157,7 @@ void loop ()
         pidFlag = false;
 
         // perform a pid update
-        heaterSetpoint = ROUND(pid->computeStep(state->roomTemperature));
+        heaterSetpoint = pid->computeStep(state->roomTemperature);
 
         // enable CH if the heater setpoint is higher than the heater temperature
         if (state->heaterTemperature <= heaterSetpoint - CTRL_HYSTERESIS) {

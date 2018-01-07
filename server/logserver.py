@@ -91,58 +91,63 @@ def espThread(clientSocket):
 
             timestamp = datetime.now().strftime('%d-%m-%y_%H:%M:%S')
 
-            # check message header
-            msgType = recvBuffer[0]
+            # parse possibly concatenated messages 
+            while len(recvBuffer) > 0:
+            
+                # check message header
+                msgType = recvBuffer[0]
 
-            if msgType == MsgType.STATE_LOG.value:
-                try:
-                    input, output, setPoint, errorSum, kP, kI, kD, \
-                        heater_status, heater_temperature, room_temperature, otError = \
-                        struct.unpack('<fffffffBffB', recvBuffer[1:])
-                        #struct.unpack('<BfffffffBff', recvBuffer[-39:])
-                except Exception as e:
-                    print('state log parse error: %s' % str(e))
-                else:
-                    s = '%s, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, 0x%02x\n' % \
-                        (timestamp, input, setPoint, output, heater_temperature, errorSum, 
-                         kP, kI, kD, heater_status)
-                    print(s)
-                    with open(paramLogFile, 'a') as f:  
-                        f.write(s)
-
-            elif msgType == MsgType.OT_RECV_ERROR_LOG.value:
-                try:
-                    errorFlags, dataId = struct.unpack('<BB', recvBuffer[1:])
-                except Exception as e:
-                    print('ot receive error log parse error: %s' % str(e))
-                else:
-                    s = '[%s] OT receive error (flags = 0x%2x, dataId = %d)' % \
-                        (timestamp, errorFlags, dataId)
-                    print(s)
-                    with open(eventLogFile, 'a') as f:  
-                        f.write(s)
-
-            elif msgType == MsgType.OT_PARSE_ERROR_LOG.value:
-                try:
-                    errorType, sendDataId, parity, msgType, recvDataId, dataValue = \
-                        struct.unpack('<BBBBBH', recvBuffer[1:])
-                except Exception as e:
-                    print('ot parse error log parse error:' % str(e))
-                else:
-                    l = {'[%s] OT parse error (errorType = %d, dataId = %d):' % \
-                            (timestamp, errorType, sendDataId),
-                         '\tparity    = %d' % parity,
-                         '\tmsgType   = %d' % msgType,
-                         '\tdataId    = %d' % recvDataId,
-                         '\tdataValue = %d' % dataValue,}
-
-                    with open(eventLogFile, 'a') as f: 
-                        for s in l:
-                            print(s)
+                if msgType == MsgType.STATE_LOG.value:
+                    try:
+                        input, output, setPoint, errorSum, kP, kI, kD, \
+                            heater_status, heater_temperature, room_temperature, otError = \
+                            struct.unpack('<fffffffBffB', recvBuffer[1:39])
+                        recvBuffer = recvBuffer[40:]
+                    except Exception as e:
+                        print('state log parse error: %s' % str(e))
+                    else:
+                        s = '%s, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, 0x%02x\n' % \
+                            (timestamp, input, setPoint, output, heater_temperature, errorSum, 
+                             kP, kI, kD, heater_status)
+                        print(s)
+                        with open(paramLogFile, 'a') as f:  
                             f.write(s)
 
-            else:
-                print('unknown message type (%x)' % msgType)
+                elif msgType == MsgType.OT_RECV_ERROR_LOG.value:
+                    try:
+                        errorFlags, dataId = struct.unpack('<BB', recvBuffer[1:3])
+                        recvBuffer = recvBuffer[4:]
+                    except Exception as e:
+                        print('ot receive error log parse error: %s' % str(e))
+                    else:
+                        s = '[%s] OT receive error (flags = 0x%2x, dataId = %d)' % \
+                            (timestamp, errorFlags, dataId)
+                        print(s)
+                        with open(eventLogFile, 'a') as f:  
+                            f.write(s)
+                            
+                elif msgType == MsgType.OT_PARSE_ERROR_LOG.value:
+                    try:
+                        errorType, sendDataId, parity, msgType, recvDataId, dataValue = \
+                            struct.unpack('<BBBBBH', recvBuffer[1:8])
+                    recvBuffer = recvBuffer[8:]
+                    except Exception as e:
+                        print('ot parse error log parse error:' % str(e))
+                    else:
+                        l = {'[%s] OT parse error (errorType = %d, dataId = %d):' % \
+                                (timestamp, errorType, sendDataId),
+                             '\tparity    = %d' % parity,
+                             '\tmsgType   = %d' % msgType,
+                             '\tdataId    = %d' % recvDataId,
+                             '\tdataValue = %d' % dataValue,}
+
+                        with open(eventLogFile, 'a') as f: 
+                            for s in l:
+                                print(s)
+                                f.write(s)
+                else:
+                    print('unknown message type (%x)' % msgType)
+                    break
                     
 
 # event log is always written to the same file
