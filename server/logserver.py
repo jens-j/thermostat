@@ -98,10 +98,10 @@ def espThread(clientSocket):
                 try:
                     input, output, setPoint, errorSum, kP, kI, kD, \
                         heater_status, heater_temperature, room_temperature, otError = \
-                        struct.unpack('<BfffffffBffB', recvBuffer[1:])
-                        #struct.unpack('<BfffffffBff', recvBuffer[-37:])
+                        struct.unpack('<fffffffBffB', recvBuffer[1:])
+                        #struct.unpack('<BfffffffBff', recvBuffer[-39:])
                 except Exception as e:
-                    print('state log parse error: %s' % str(type(e)))
+                    print('state log parse error: %s' % str(e))
                 else:
                     s = '%s, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, 0x%02x\n' % \
                         (timestamp, input, setPoint, output, heater_temperature, errorSum, 
@@ -114,7 +114,7 @@ def espThread(clientSocket):
                 try:
                     errorFlags, dataId = struct.unpack('<BB', recvBuffer[1:])
                 except Exception as e:
-                    print('ot receive error log parse error: %s' % str(type(e)))
+                    print('ot receive error log parse error: %s' % str(e))
                 else:
                     s = '[%s] OT receive error (flags = 0x%2x, dataId = %d)' % \
                         (timestamp, errorFlags, dataId)
@@ -127,7 +127,7 @@ def espThread(clientSocket):
                     errorType, sendDataId, parity, msgType, recvDataId, dataValue = \
                         struct.unpack('<BBBBBH', recvBuffer[1:])
                 except Exception as e:
-                    print('ot parse error log parse error:' % str(type(e)))
+                    print('ot parse error log parse error:' % str(e))
                 else:
                     l = {'[%s] OT parse error (errorType = %d, dataId = %d):' % \
                             (timestamp, errorType, sendDataId),
