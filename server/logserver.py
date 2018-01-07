@@ -12,10 +12,9 @@ class MsgType(Enum):
     STATE_LOG           = 0
     OT_RECV_ERROR_LOG   = 1
     OT_PARSE_ERROR_LOG  = 2
-
+    RESET_LOG           = 3
 
 cmdQueue = deque()
-
 
 def server(name, port, threadFunction):
 
@@ -97,65 +96,73 @@ def espThread(clientSocket):
                 # check message header
                 msgType = recvBuffer[0]
 
-                if msgType == MsgType.STATE_LOG.value:
+                if msgType == MsgType.STATE_LOG.value and len(recvBuffer) >= 39:
                     try:
                         input, output, setPoint, errorSum, kP, kI, kD, \
                             heater_status, heater_temperature, room_temperature, otError = \
                             struct.unpack('<fffffffBffB', recvBuffer[1:39])
-                        recvBuffer = recvBuffer[40:]
+                        recvBuffer = recvBuffer[39:]
                     except Exception as e:
                         print('state log parse error: %s' % str(e))
                     else:
-                        s = '%s, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, 0x%02x\n' % \
+                        s = '%s, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.5f, %.2f, 0x%02x\n' % \
                             (timestamp, input, setPoint, output, heater_temperature, errorSum, 
                              kP, kI, kD, heater_status)
                         print(s)
                         with open(paramLogFile, 'a') as f:  
                             f.write(s)
 
-                elif msgType == MsgType.OT_RECV_ERROR_LOG.value:
+                elif msgType == MsgType.OT_RECV_ERROR_LOG.value and len(recvBuffer) >= 3:
                     try:
                         errorFlags, dataId = struct.unpack('<BB', recvBuffer[1:3])
-                        recvBuffer = recvBuffer[4:]
+                        recvBuffer = recvBuffer[3:]
                     except Exception as e:
                         print('ot receive error log parse error: %s' % str(e))
                     else:
-                        s = '[%s] OT receive error (flags = 0x%2x, dataId = %d)' % \
+                        s = '[%s] OT receive error (errorType = 0x%d, dataId = %d)\n' % \
                             (timestamp, errorFlags, dataId)
                         print(s)
                         with open(eventLogFile, 'a') as f:  
                             f.write(s)
                             
-                elif msgType == MsgType.OT_PARSE_ERROR_LOG.value:
+                elif msgType == MsgType.OT_PARSE_ERROR_LOG.value and len(recvBuffer) >= 8:
                     try:
                         errorType, sendDataId, parity, msgType, recvDataId, dataValue = \
                             struct.unpack('<BBBBBH', recvBuffer[1:8])
-                    recvBuffer = recvBuffer[8:]
+                        recvBuffer = recvBuffer[8:]
                     except Exception as e:
                         print('ot parse error log parse error:' % str(e))
                     else:
-                        l = {'[%s] OT parse error (errorType = %d, dataId = %d):' % \
+                        l = {'[%s] OT parse error (errorFlags = %02x, dataId = %d):\n' % \
                                 (timestamp, errorType, sendDataId),
-                             '\tparity    = %d' % parity,
-                             '\tmsgType   = %d' % msgType,
-                             '\tdataId    = %d' % recvDataId,
-                             '\tdataValue = %d' % dataValue,}
-
-                        with open(eventLogFile, 'a') as f: 
+                             '\tparity    = %d\n' % parity,
+                             '\tmsgType   = %d\n' % msgType,
+                             '\tdataId    = %d\n' % recvDataId,
+                             '\tdataValue = %d\n' % dataValue,}
+                        with open(eventLogFile, 'a') as f:
+                            f.write(str(l))
                             for s in l:
                                 print(s)
                                 f.write(s)
-                else:
+                elif msgType == MsgType.RESET_LOG.value:
+                    recvBuffer = recvBuffer[1:]
+                    s = '[%s] Arduino reset' % timestamp
+                    print(s)
+                    with open(eventLogFile, 'a') as f:
+                       f.write(s)
+                else: # skip any at commands echoed by the esp
                     print('unknown message type (%x)' % msgType)
-                    break
-                    
+                    try:
+                        idx = recvBuffer.index(b'\n')
+                        recvBuffer = recvBuffer[idx + 1:]
+                    except:
+                        break
 
-# event log is always written to the same file
-eventLogFile = '../log/event.log'
-
-# the parameter log file spans the lifetime of the logserver
+# the parameter and event log files spans the lifetime of the logserver
 t0 = datetime.now().strftime('%d-%m-%y_%H:%M:%S')
-paramLogFile = '../log/temperature_%s.log' % t0
+paramLogFile = '../log/parameters_%s.log' % t0
+eventLogFile = '../log/events_%s.log' % t0
+print(eventLogFile)
 with open(paramLogFile, 'a') as f:
     f.write('# timestamp, Ti, Ts, To, Th, errorSum, kP, kI, kD, heaterStatus\n')
 
