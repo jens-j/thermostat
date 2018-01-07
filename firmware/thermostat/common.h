@@ -43,12 +43,13 @@
 #define M_PID               2500  // (5 s)    control loop update frequency
 
 // pid coefficients
-#define PID_P               20  
+#define PID_P               20 
 #define PID_I               0.01
 #define PID_D               0
 #define PID_IMAX            100
 #define PID_MIN_OUTPUT      10
 #define PID_MAX_OUTPUT      90
+#define PID_I_BAND          1
 
 // other temperature control parameters
 #define CTRL_HYSTERESIS     1 // [C] heater is enabled if themperature drop this much below the setpoint
@@ -77,8 +78,9 @@ int freeRam ();
 enum esp_msg_t {STATE_LOG           = 0,
                 OT_RECV_ERROR_LOG   = 1,
                 OT_PARSE_ERROR_LOG  = 2,
-                SETPOINT_CMD        = 3,
-                PID_COEFFS_CMD      = 4};
+                RESET_LOG           = 3,
+                SETPOINT_CMD        = 4,
+                PID_COEFFS_CMD      = 5};
 
 // pid step update log message structure
 typedef struct pid_state_s {

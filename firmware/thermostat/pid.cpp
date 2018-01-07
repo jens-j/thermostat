@@ -34,8 +34,11 @@ float Pid::computeStep (float input)
     float error = setpoint_ - input;
     float dInput = (input - prevInput_) / dt;
 
+    // // only update the integral term in the proportional band
+    // if (abs(setpoint_ - input) <= PID_I_BAND) {
     errorSum_ += kI_ * error * dt;
     errorSum_ = constrain(errorSum_, 0, outputMax_);
+    // }
 
     // p on e & d on m
     output = kP_ * error + errorSum_ - kD_ * dInput;  

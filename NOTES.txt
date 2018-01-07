@@ -10,3 +10,12 @@
 - document opentherm and heater functions 
 
 - cmd using rpc call so the server can log command events
+
+- make the esp stop echoing at commands to the server
+
+- the buttons dont work well 
+
+- dont enable CH during lockout
+- CH might have timed lock out and hysteresis -> do data analysis
+
+- make scrolling menu with verbose info 
