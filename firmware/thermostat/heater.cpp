@@ -18,8 +18,7 @@ bool Heater::getTemperature (float *temperature)
     return getTemperatureVerbose(temperature, &recvError, &parseError);
 }
 
-bool Heater::getTemperatureVerbose (float *temperature, recv_error_t *recvError, 
-                            parse_error_t *parseError)
+bool Heater::getTemperatureVerbose (float *temperature, recv_error_t *recvError, parse_error_t *parseError)
 {
     bool success;
     uint16_t readValue;
