@@ -14,7 +14,7 @@ def setpoint(raw):
     except:
         print('invalid setpoint command: %s' % raw)
     else:
-        clientSocket.send(struct.pack('<Bf', 1, setpoint))
+        clientSocket.send(struct.pack('<Bf', 4, setpoint))
 
 def coeffs(raw):
     try:
@@ -22,7 +22,7 @@ def coeffs(raw):
     except:
         print('invalid coefficients command: %s' % raw)
     else:
-        clientSocket.send(struct.pack('<Bfff', 2, kP, kI, kD))
+        clientSocket.send(struct.pack('<Bfff', 5, kP, kI, kD))
 
 while True:
     raw = input(">")

@@ -52,6 +52,11 @@ void Esp::logOtError(recv_error_t *recvError, parse_error_t *parseError)
     }
 }
 
+void Esp::logReset ()
+{
+    esp_->write((uint8_t) RESET_LOG);
+}
+
 void Esp::printReply ()
 {
     delay(100);

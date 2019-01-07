@@ -91,6 +91,8 @@ void setup ()
     esp = new Esp(ESP_RX_PIN, ESP_TX_PIN, pid);
     esp->initialize();
 
+    esp->logReset();
+
     Serial.println(F("start\n"));
     Timer1.attachInterrupt(TIMER1_ISR);
 
@@ -160,11 +162,13 @@ void loop ()
         heaterSetpoint = pid->computeStep(state->roomTemperature);
 
         // enable CH if the heater setpoint is higher than the heater temperature
-        if (state->heaterTemperature <= heaterSetpoint - CTRL_HYSTERESIS) {
+        if (state->heaterTemperature < heaterSetpoint) {
             masterState = 0x3; // CH and DHW enabled
-        } else {
+        } else if ((state->heaterStatus & STATUS_FLAME) == 0) { // disable if the setpoint is reached and the flame is off
             masterState = 0x2; // DHW enabled
         }
+        Serial.print("masterState: 0x");
+        Serial.println(masterState, HEX);
 
         // write water temperature to the heater
         state->otError = !heater->setTemperatureVerbose(heaterSetpoint, &recvError, &parseError);

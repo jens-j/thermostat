@@ -21,6 +21,9 @@ public:
     // combined dispatcher for receive and parse error log messages
     void logOtError(recv_error_t *recvError, parse_error_t *parseError);
 
+    // log the arduino was reset or powered up
+    void logReset ();
+
     // print the reply from the esp if any
     void printReply ();
 

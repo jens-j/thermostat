@@ -93,7 +93,9 @@ enum button_state_t {
 
 enum menu_state_t {
     MENU_FRONT,
-    MENU_SETPOINT
+    MENU_SETPOINT,
+    MENU_LIST,
+    MENU_SELECT_MENU
 };
 
 
