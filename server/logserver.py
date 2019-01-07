@@ -119,7 +119,7 @@ def espThread(clientSocket):
                     except Exception as e:
                         print('ot receive error log parse error: %s' % str(e))
                     else:
-                        s = '[%s] OT receive error (errorType = 0x%d, dataId = %d)\n' % \
+                        s = '[%s] OT receive error (errorType = %d, dataId = %d)\n' % \
                             (timestamp, errorFlags, dataId)
                         print(s)
                         with open(eventLogFile, 'a') as f:  
@@ -133,14 +133,13 @@ def espThread(clientSocket):
                     except Exception as e:
                         print('ot parse error log parse error:' % str(e))
                     else:
-                        l = {'[%s] OT parse error (errorFlags = %02x, dataId = %d):\n' % \
+                        l = ['[%s] OT parse error (errorFlags = 0x%02x, dataId = %d):\n' % \
                                 (timestamp, errorType, sendDataId),
                              '\tparity    = %d\n' % parity,
                              '\tmsgType   = %d\n' % msgType,
                              '\tdataId    = %d\n' % recvDataId,
-                             '\tdataValue = %d\n' % dataValue,}
+                             '\tdataValue = %d\n' % dataValue]
                         with open(eventLogFile, 'a') as f:
-                            f.write(str(l))
                             for s in l:
                                 print(s)
                                 f.write(s)
