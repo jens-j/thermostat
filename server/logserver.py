@@ -3,6 +3,7 @@
 import socket
 import struct
 import threading
+from binascii import hexlify
 from datetime import datetime
 from enum import Enum
 from collections import deque
@@ -50,7 +51,7 @@ def cmdThread(clientSocket):
             return
 
         print('(cmd) received %d bytes' % len(recvBuffer))
-        print('(cmd) received: %s' % recvBuffer)
+        print('(cmd) received: %s' % hexlify(recvBuffer))
 
         cmdQueue.append(recvBuffer)
 
@@ -70,7 +71,7 @@ def espThread(clientSocket):
                 #print('(esp) cmd queue empty')
                 break
             else:
-                print('(esp) send: %s' % msg)
+                print('(esp) send: %s' % hexlify(msg))
                 clientSocket.send(msg)
 
         # try to receive from the client
@@ -86,7 +87,7 @@ def espThread(clientSocket):
                 return
 
             print('(esp) received %d bytes' % len(recvBuffer))
-            print('(esp) received: %s' % recvBuffer)
+            print('(esp) received: %s' % hexlify(recvBuffer))
 
             timestamp = datetime.now().strftime('%d-%m-%y_%H:%M:%S')
 
@@ -105,12 +106,12 @@ def espThread(clientSocket):
                     except Exception as e:
                         print('state log parse error: %s' % str(e))
                     else:
-                        s = '%s, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.5f, %.2f, 0x%02x\n' % \
+                        s = '%s, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.5f, %.2f, 0x%02x' % \
                             (timestamp, input, setPoint, output, heater_temperature, errorSum, 
                              kP, kI, kD, heater_status)
                         print(s)
                         with open(paramLogFile, 'a') as f:  
-                            f.write(s)
+                            f.write(s + '\n')
 
                 elif msgType == MsgType.OT_RECV_ERROR_LOG.value and len(recvBuffer) >= 3:
                     try:
@@ -119,11 +120,11 @@ def espThread(clientSocket):
                     except Exception as e:
                         print('ot receive error log parse error: %s' % str(e))
                     else:
-                        s = '[%s] OT receive error (errorType = 0x%d, dataId = %d)\n' % \
+                        s = '[%s] OT receive error (errorType = %d, dataId = %d)' % \
                             (timestamp, errorFlags, dataId)
                         print(s)
                         with open(eventLogFile, 'a') as f:  
-                            f.write(s)
+                            f.write(s + '\n')
                             
                 elif msgType == MsgType.OT_PARSE_ERROR_LOG.value and len(recvBuffer) >= 8:
                     try:
@@ -133,23 +134,24 @@ def espThread(clientSocket):
                     except Exception as e:
                         print('ot parse error log parse error:' % str(e))
                     else:
-                        l = {'[%s] OT parse error (errorFlags = %02x, dataId = %d):\n' % \
+                        l = ['[%s] OT parse error (errorFlags = 0x%02x, dataId = %d):' % \
                                 (timestamp, errorType, sendDataId),
-                             '\tparity    = %d\n' % parity,
-                             '\tmsgType   = %d\n' % msgType,
-                             '\tdataId    = %d\n' % recvDataId,
-                             '\tdataValue = %d\n' % dataValue,}
+                             '\tparity    = %d' % parity,
+                             '\tmsgType   = %d' % msgType,
+                             '\tdataId    = %d' % recvDataId,
+                             '\tdataValue = %d' % dataValue]
                         with open(eventLogFile, 'a') as f:
-                            f.write(str(l))
                             for s in l:
                                 print(s)
-                                f.write(s)
+                                f.write(s + '\n')
+
                 elif msgType == MsgType.RESET_LOG.value:
                     recvBuffer = recvBuffer[1:]
                     s = '[%s] Arduino reset' % timestamp
                     print(s)
                     with open(eventLogFile, 'a') as f:
                        f.write(s)
+
                 else: # skip any at commands echoed by the esp
                     print('unknown message type (%x)' % msgType)
                     try:
