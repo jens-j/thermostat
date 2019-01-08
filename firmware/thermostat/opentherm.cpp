@@ -92,7 +92,7 @@ bool OpenTherm::getRegister(uint8_t dataId, uint16_t *readValue, recv_error_t *r
     recvError->errorFlags = recvReply(&frameBuf, &recvCount);
     recvError->dataId = dataId;
     parseError->errorType = parseFrame(frameBuf, &message);
-    parseError->dataId = parseFrame(frameBuf, &message);
+    parseError->dataId = dataId;
     parseError->message = message;
 
     *readValue = message.dataValue;
@@ -157,10 +157,12 @@ ot_recv_error_t OpenTherm::recvReply(uint64_t *frameBuf, int *n)
 
     *n = 0;
     *frameBuf = 0ULL;
-
     recvFlag_ = false;
     recvBusyFlag_ = false;  
+    recvErrorFlag_ = false;
     recvErrorCode_ = OT_RECV_ERR_NONE;
+
+    Serial.println("rr");
 
     while (millis() - t0 < T_SLAVE_RESP) {
 
@@ -169,7 +171,7 @@ ot_recv_error_t OpenTherm::recvReply(uint64_t *frameBuf, int *n)
             errorCode = recvErrorCode_;
             recvErrorCode_ = OT_RECV_ERR_NONE;
             *n = recvCount_;
-            recvErrorFlag_ = false;
+            Serial.println(recvCount_);
             return errorCode;
         }
 
@@ -187,6 +189,7 @@ ot_recv_error_t OpenTherm::recvReply(uint64_t *frameBuf, int *n)
 
 void OpenTherm::wdtIsr() {
 
+    Serial.println("wdt isr");
     WDTCSR &= ~(1<<WDIE); // Disable wdt interrupt
 
     if (recvErrorCode_ == OT_RECV_ERR_NONE) {
@@ -229,6 +232,7 @@ void OpenTherm::otIsr() {
         recvBuffer_ = 0x00000000;
         midBitFlag_ = false;
         
+        wdt_reset();
         WDTCSR |= (1<<WDIE); // Enable wdt interrupt
     }
     // First clock transition of the start bit

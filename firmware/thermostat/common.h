@@ -27,7 +27,7 @@
 #define TMP_C_IIR           0.02 // moving average coefficient
 
 // server address
-#define SERVER_IP           "192.168.2.3"
+#define SERVER_IP           "192.168.2.5"
 #define CLIENT_IP           "192.168.2.1"
 #define SERVER_PORT         8888
 
