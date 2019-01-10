@@ -2,32 +2,41 @@
 
 import socket
 import struct
+import argparse
 from scanf import scanf
 
-clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-clientSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # This is regarded as a highly controversial move
-clientSocket.connect(('localhost', 9999))
+class Cmd():
 
-def setpoint(raw):
-    try:
-        setpoint = scanf('s %f', raw)[0]
-    except:
-        print('invalid setpoint command: %s' % raw)
-    else:
-        clientSocket.send(struct.pack('<Bf', 4, setpoint))
+    def __init__(self):
 
-def coeffs(raw):
-    try:
-        kP, kI, kD = scanf('c %f %f %f', raw)
-    except:
-        print('invalid coefficients command: %s' % raw)
-    else:
-        clientSocket.send(struct.pack('<Bfff', 5, kP, kI, kD))
+        self.clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.clientSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # This is regarded as a highly controversial move
+        self.clientSocket.connect(('localhost', 9999))
 
-while True:
-    raw = input(">")
-    if raw:
-        if raw[0] == 's':
-            setpoint(raw)
-        elif raw[0] == 'c':
-            coeffs(raw)
+    def __del__(self):
+
+        self.clientSocket.close()
+
+
+    def setpoint(self, setpoint):
+
+        self.clientSocket.send(struct.pack('<Bf', 4, setpoint))
+
+
+    def coeffs(self, p, i ,d):
+
+        self.clientSocket.send(struct.pack('<Bfff', 5, p, i, d))
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', '--setpoint', type=int, help='temperature setpoint')
+    arguments = parser.parse_args()
+
+    print(arguments.setpoint)
+
+    cmd = Cmd()
+    cmd.setpoint(arguments.setpoint)
+
+
