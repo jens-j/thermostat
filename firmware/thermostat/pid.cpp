@@ -44,9 +44,9 @@ float Pid::computeStep (float input)
     output = kP_ * error + errorSum_ - kD_ * dInput;  
 
     // p on m & d on m
-    // float output = -kP_ * (input - initInput_) + errorSum_ - kD_ * dInput; // p on m & d on m
+    // float output = -kP_ * (input - initInput_) + errorSum_ - kD_ * dInput;
     
-    // positive pid output should result in boiler water which is warmer than the room temerature
+    // positive pid output should result in boiler water which is warmer than the room temperature
     output = output + input; 
     output = constrain(output, outputMin_, outputMax_);
 
