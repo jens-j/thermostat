@@ -44,12 +44,12 @@
 
 // pid coefficients
 #define PID_P               20 
-#define PID_I               0.01
+#define PID_I               0.005
 #define PID_D               0
-#define PID_IMAX            100
+#define PID_IMAX            50
 #define PID_MIN_OUTPUT      10
 #define PID_MAX_OUTPUT      90
-#define PID_I_BAND          1
+#define PID_I_BAND          2
 
 // other temperature control parameters
 #define CTRL_HYSTERESIS     1 // [C] heater is enabled if themperature drop this much below the setpoint

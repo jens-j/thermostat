@@ -162,8 +162,6 @@ ot_recv_error_t OpenTherm::recvReply(uint64_t *frameBuf, int *n)
     recvErrorFlag_ = false;
     recvErrorCode_ = OT_RECV_ERR_NONE;
 
-    Serial.println("rr");
-
     while (millis() - t0 < T_SLAVE_RESP) {
 
         // print errors
